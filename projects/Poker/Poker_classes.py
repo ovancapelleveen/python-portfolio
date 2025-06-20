@@ -1,4 +1,5 @@
 import tkinter as tk
+import os
 from PIL import ImageTk, Image
 from random import shuffle
 from sys import exit
@@ -7,8 +8,11 @@ class Card:
     """Representatie van een enkele speelkaart."""
     suits = ['Harten', 'Schoppen', 'Ruiten', 'Klaveren']
     values = {'2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, '10':10, 'Boer':11, 'Vrouw':12, 'Heer':13, 'Aas':14}
-    image_file = f'.\\Speelkaarten'
-    bg_loc = f'{image_file}\\bg_red.png'
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    image_folder = os.path.join(BASE_DIR, "Speelkaarten")
+    # image_folder = f'.\\Speelkaarten'
+    bg_loc = os.path.join(image_folder, 'achterkant.png')
+    # bg_loc = f'{image_folder}\\bg_red.png'
 
     def __init__(self, suit: str, rank: str):
         """Initialisatie van speelkaart met kleur en rang."""
@@ -16,7 +20,7 @@ class Card:
         self.rank = rank
         self.order = Card.values[rank]
         self.player = ''
-        self.image_loc = f'{Card.image_file}\\{suit}_10.png'
+        self.image_loc = f'{Card.image_folder}\\{suit}_10.png'
         self.img = Image.open(self.image_loc).resize((121,150))
 
     # def display(self, id):
@@ -134,8 +138,6 @@ class Player:
 
 class Window():
     """Representatie van een speelscherm."""
-    # image_file = f'.\\Speelkaarten'
-    # bg_loc = f'{image_file}\\bg_red.png'
     bg_color = 'pink'
     fg_color = 'black'
 

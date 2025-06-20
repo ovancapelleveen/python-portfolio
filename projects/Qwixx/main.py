@@ -2,6 +2,7 @@ import re
 import tkinter as tk
 from tkinter import Button, Label, Frame, Tk
 
+import os
 from PIL import Image #, ImageTk
 from PIL.ImageTk import PhotoImage
 from random import randint, shuffle
@@ -10,8 +11,11 @@ from sys import exit
 
 class Window():
     #Logo van het spel
-    image_file = f'.\\Qwixx_dice'
-    bg_loc = f'{image_file}\\menu.jpg'
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    image_folder = os.path.join(BASE_DIR, "Qwixx_dice")
+    # image_folder = f'.\\Qwixx_dice'
+    bg_loc = os.path.join(image_folder, 'menu.jpg')
+    # bg_loc = f'{image_folder}\\menu.jpg'
     bg_color = 'lightblue'
     fg_color = 'black'
     width = 1000
@@ -133,8 +137,6 @@ class Window():
 
 class Dice():
     #Locatie voor dobbelsteen-plaatjes
-    # image_file = f'C:\\Users\\Olivier\\OneDrive\\Documents\\Privé\\Bestanden\\Python\\Spellen_GUI\\Qwixx'
-    image_file = f'.\\Qwixx_dice'
     colors = ['Red', 'Blue', 'Green', 'Yellow', 'White1', 'White2']
     imagesize = (70, 70)
 
@@ -142,12 +144,14 @@ class Dice():
         self.value = randint(1,6)
         self.name = name
         self.color = re.findall('[A-z]+', self.name)[0]
-        self.image_loc = f'{Dice.image_file}\\White_{self.value}.png'
+        self.image_loc = os.path.join(Window.image_folder, f'White_{self.value}.png')
+        # self.image_loc = f'{Window.image_folder}\\White_{self.value}.png'
         self.img = Image.open(self.image_loc).resize(Dice.imagesize)
 
     def roll(self):
         self.value = randint(1,6)
-        self.image_loc = f'{Dice.image_file}\\{self.color}_{self.value}.png'
+        self.image_loc = os.path.join(Window.image_folder, f'{self.color}_{self.value}.png')
+        # self.image_loc = f'{Window.image_folder}\\{self.color}_{self.value}.png'
         self.img = Image.open(self.image_loc).resize(Dice.imagesize)
 
     def __repr__(self):
