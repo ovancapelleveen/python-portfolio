@@ -1,6 +1,5 @@
 import tkinter as tk
 from PIL import ImageTk, Image
-import os
 from random import shuffle
 from sys import exit
 
@@ -8,7 +7,7 @@ class Card:
     """Representatie van een enkele speelkaart."""
     suits = ['Harten', 'Schoppen', 'Ruiten', 'Klaveren']
     values = {'2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, '10':10, 'Boer':11, 'Vrouw':12, 'Heer':13, 'Aas':14}
-    image_file = f'{os.getcwd()}\\Speelkaarten'
+    image_file = f'.\\Speelkaarten'
     bg_loc = f'{image_file}\\bg_red.png'
 
     def __init__(self, suit: str, rank: str):
@@ -115,7 +114,7 @@ class Player:
         window = Window('Bevestigen')
 
         window.add_frame(window.frame_top, 950,450)
-        img_bg = ImageTk.PhotoImage(Image.open(Window.bg_loc).resize((120,150)))
+        img_bg = ImageTk.PhotoImage(Image.open(Card.bg_loc).resize((120,150)))
         window.images.append(img_bg)
         # Create a Label Widget to display the text or Image
         lbl_card = tk.Label(master=window.frame_top, image=img_bg)
@@ -135,8 +134,8 @@ class Player:
 
 class Window():
     """Representatie van een speelscherm."""
-    image_file = f'{os.getcwd()}\\Speelkaarten'
-    bg_loc = f'{image_file}\\bg_red.png'
+    # image_file = f'.\\Speelkaarten'
+    # bg_loc = f'{image_file}\\bg_red.png'
     bg_color = 'pink'
     fg_color = 'black'
 
