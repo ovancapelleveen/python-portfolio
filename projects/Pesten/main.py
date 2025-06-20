@@ -136,6 +136,7 @@ class Window:
     height = 1000
 
     def __init__(self, parent:Tk, naam=None):
+        print(f'{Card.image_folder=}')
         self.window = parent
         self.images = []
         #Root leegmaken bij volgende aanroep
