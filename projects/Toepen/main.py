@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import Button, Label, Frame, Tk
 
+import os
 from PIL import Image #, ImageTk
 from PIL.ImageTk import PhotoImage
 from random import shuffle
@@ -10,15 +11,19 @@ class Card:
     """Represents a single playing card."""
     suits = ['Harten', 'Schoppen', 'Ruiten', 'Klaveren']
     values = ['7', '8', '9', '10', 'Boer', 'Vrouw', 'Heer', 'Aas']
-    image_file = '.\\Speelkaarten'
-    bg_loc = f'{image_file}\\achterkant.png'
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    image_folder = os.path.join(BASE_DIR, "Speelkaarten")
+    # image_folder = '.\\Speelkaarten'
+    bg_loc = os.path.join(image_folder, 'achterkant.png')
+    # bg_loc = f'{image_folder}\\achterkant.png'
     imagesize = (121,150)
 
     def __init__(self, suit="0", value="0"):
         self.suit = suit
         self.value = value
         self.player = ''
-        self.image_loc = f'{Card.image_file}\\{suit}_{value}.png'
+        self.image_loc = os.path.join(Card.image_folder, f'{suit}_{value}.png')
+        # self.image_loc = f'{Card.image_folder}\\{suit}_{value}.png'
         self.img = Image.open(self.image_loc).resize(Card.imagesize)
 
     def __repr__(self):    
