@@ -3,7 +3,7 @@ from PIL import ImageTk, Image
 from sys import exit
 from collections import Counter
 from itertools import cycle
-from Poker_classes import Player, Window
+from Poker_classes import Player, Window, Card
 
 
 def spelerbeurt(speler, spelers, tafel, blind=None):
@@ -146,7 +146,7 @@ def startmenu():
     window.add_frame(window.frame_text, 950, 450)
     window.add_frame(window.frame_confirm, 950, 700)
     #Afbeelding toevoegen
-    img_bg = ImageTk.PhotoImage(Image.open(Window.bg_loc).resize((120,150)))
+    img_bg = ImageTk.PhotoImage(Image.open(Card.bg_loc).resize((120,150)))
     # Create a Label Widget to display the text or Image
     tk.Label(master=window.frame_text, image=img_bg, bg=Window.bg_color).pack()
     window.add_label("\nWil je een potje spelen?", window.frame_text, font=('calibri',15,'normal'))

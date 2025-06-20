@@ -4,14 +4,13 @@ from tkinter import Button, Label, Frame, Tk
 
 from PIL import Image #, ImageTk
 from PIL.ImageTk import PhotoImage
-import os
 from random import randint, shuffle
 from sys import exit
 
 
 class Window():
     #Logo van het spel
-    image_file = f'{os.getcwd()}\\Qwixx_dice'
+    image_file = f'.\\Qwixx_dice'
     bg_loc = f'{image_file}\\menu.jpg'
     bg_color = 'lightblue'
     fg_color = 'black'
@@ -30,7 +29,7 @@ class Window():
         for widget in parent.winfo_children():
             widget.destroy()        
 
-    def add_frame(self, master=None, x_pos=None, y_pos=None, grid=False, anchor_=tk.CENTER, relief:tk._Relief=tk.FLAT, **kwargs):
+    def add_frame(self, master=None, x_pos=None, y_pos=None, grid=False, anchor_=tk.CENTER, relief=tk.FLAT, **kwargs):
         """Frame toevoegen aan het scherm."""
         if not master:
             master = self.window
@@ -135,7 +134,7 @@ class Window():
 class Dice():
     #Locatie voor dobbelsteen-plaatjes
     # image_file = f'C:\\Users\\Olivier\\OneDrive\\Documents\\Privé\\Bestanden\\Python\\Spellen_GUI\\Qwixx'
-    image_file = f'{os.getcwd()}\\Qwixx'
+    image_file = f'.\\Qwixx_dice'
     colors = ['Red', 'Blue', 'Green', 'Yellow', 'White1', 'White2']
     imagesize = (70, 70)
 

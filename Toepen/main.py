@@ -3,7 +3,6 @@ from tkinter import Button, Label, Frame, Tk
 
 from PIL import Image #, ImageTk
 from PIL.ImageTk import PhotoImage
-import os
 from random import shuffle
 from sys import exit
 
@@ -11,7 +10,7 @@ class Card:
     """Represents a single playing card."""
     suits = ['Harten', 'Schoppen', 'Ruiten', 'Klaveren']
     values = ['7', '8', '9', '10', 'Boer', 'Vrouw', 'Heer', 'Aas']
-    image_file = f'{os.getcwd()}\\Speelkaarten'
+    image_file = '.\\Speelkaarten'
     bg_loc = f'{image_file}\\achterkant.png'
     imagesize = (121,150)
 
