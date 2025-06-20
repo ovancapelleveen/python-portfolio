@@ -13,8 +13,10 @@ class Card:
     suits = ['Harten', 'Schoppen', 'Ruiten', 'Klaveren']
     values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Boer', 'Vrouw', 'Heer', 'Aas']
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    image_folder = os.path.join(BASE_DIR, "Speelkaarten")
-    bg_loc = os.path.join(image_folder, 'achterkant.png')
+    # image_folder = os.path.join(BASE_DIR, "Speelkaarten")
+    image_folder = f'./Speelkaarten'
+    # bg_loc = os.path.join(image_folder, 'achterkant.png')
+    bg_loc = f'{image_folder}\\achterkant.png'
     imagesize = (121,150)
 
     def __init__(self, suit:str="0", value:str="0", type:str="0"):
