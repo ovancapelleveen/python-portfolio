@@ -33,7 +33,7 @@ class Window():
         """Frame toevoegen aan het scherm."""
         if not master:
             master = self.window
-        frame = Frame(master, relief=relief, bd=1, bg=Window.bg_color)
+        frame = Frame(master, relief=relief, bd=1, bg=Window.bg_color) # type: ignore
         self.place_widget(frame, x_pos, y_pos, grid, anchor_, **kwargs)
         return frame
     
