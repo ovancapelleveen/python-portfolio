@@ -6,6 +6,7 @@ import os
 from PIL import Image #, ImageTk
 from PIL.ImageTk import PhotoImage
 from random import randint, shuffle
+from itertools import cycle
 from sys import exit
 
 
@@ -328,9 +329,12 @@ def unique(namen):
             unique.append(naam.player)
     return len(unique) == len(namen)
 
+def next_starter(inputlist):
+    inputlist = inputlist[1:] + inputlist[:1]
+    return inputlist
 
 #Start van de beurt weergeven
-def start_beurt(root, index, dice, vervolg_beurt):
+def start_beurt(root, dice, vervolg_beurt):
 
     def dobbelen():
         # nonlocal dice
@@ -344,21 +348,20 @@ def start_beurt(root, index, dice, vervolg_beurt):
     img_bg = PhotoImage(Image.open(Window.bg_loc).resize(Window.imagesize))
     window.images.append(img_bg)
     window.add_image(frame_text, img_bg, 0, 0)
-    window.add_text(f"Het is nu de beurt aan {Scorekaart.players[index].player}", frame_text, 0, 1, grid=True)
+    window.add_text(f"Het is nu de beurt aan {Scorekaart.players[0].player}", frame_text, 0, 1, grid=True)
     #Bevestig knop
     window.add_confirm(functie=dobbelen, tekst="Gooi dobbelstenen!", x_pos=Window.width/2, y_pos=350, width=15)
 
 
 def spel_spelen(root):
-    index = 0
     #Dobbelstenen initiëren
     dice = [Dice(color) for color in Dice.colors]
 
     def next_turn():
-        nonlocal index, dice
-        Scorekaart.players[index].gebruikt1 = False
-        Scorekaart.players[index].gebruikt2 = False
-        start_beurt(root, index, dice, lambda: spelerbeurt_wit(root, dice, index, na_wit))
+        nonlocal dice
+        Scorekaart.players[0].gebruikt1 = False
+        Scorekaart.players[0].gebruikt2 = False
+        start_beurt(root, dice, lambda: spelerbeurt_wit(root, dice, na_wit))
 
     def na_wit():
         nonlocal dice
@@ -369,12 +372,12 @@ def spel_spelen(root):
             eindstand(root, reden)
             return
         else:
-            kiezen(root, index, index, dice, einde_beurt, white=False)
+            kiezen(root, Scorekaart.players[0], dice, einde_beurt, white=False)
 
     def einde_beurt():
-        nonlocal index, dice
-        if not Scorekaart.players[index].gebruikt1 and not Scorekaart.players[index].gebruikt2:
-            Scorekaart.players[index].failed_throw()
+        nonlocal dice
+        if not Scorekaart.players[0].gebruikt1 and not Scorekaart.players[0].gebruikt2:
+            Scorekaart.players[0].failed_throw()
         einde, dice, reden = einde_controle(dice)
         if einde:
             #Spel is voorbij. Eindstand weergeven
@@ -382,7 +385,7 @@ def spel_spelen(root):
             eindstand(root, reden)
             return
         else:
-            index = (index+1)%len(Scorekaart.players)
+            Scorekaart.players = next_starter(Scorekaart.players)
             next_turn()
         
     next_turn()
@@ -446,32 +449,33 @@ def einde_controle(dice):
     return einde, dice, reden
 
 #Deel 1 van de beurt, loopt ook door andere spelers voor de witte dobbelstenen
-def spelerbeurt_wit(root, dice, startindex, callback):
+def spelerbeurt_wit(root, dice, callback):
     speler_counter = -1
-    index = (startindex-1)%Scorekaart.aantal
+    speler_cycle = cycle(Scorekaart.players)
 
+    
     def next_player():
-        nonlocal index, speler_counter
-        index = (index+1)%Scorekaart.aantal
+        nonlocal speler_counter
+        speler = next(speler_cycle)
         speler_counter += 1
         if speler_counter == Scorekaart.aantal:
             callback()
             return
         else:
-            kiezen(root, index, startindex, dice, next_player)
+            kiezen(root, speler, dice, next_player)
 
     next_player()
 
 #Vakje kiezen om te markeren
-def kiezen(root, index, startindex, dice, callback, white=True):
+def kiezen(root, speler, dice, callback, white=True):
     #Markeer veld op kaart
     def mark_value(color, num):
-        if index==startindex:
+        if speler==Scorekaart.players[0]:
             if white:
-                Scorekaart.players[index].gebruikt1 = True
+                speler.gebruikt1 = True
             else:
-                Scorekaart.players[index].gebruikt2 = True
-        Scorekaart.players[index].mark(color, num)
+                speler.gebruikt2 = True
+        speler.mark(color, num)
         callback()
 
     #Initieer window
@@ -481,10 +485,10 @@ def kiezen(root, index, startindex, dice, callback, white=True):
     frame_kaart['highlightbackground']="black"
     frame_kaart['highlightthickness']=1
     #Spelernaam en tekst toevoegen boven de kaart
-    window.add_text(Scorekaart.players[index].player, frame_kaart, 0, 0, grid=True, columnspan=2, font=('Calibri', 20, 'bold'))
-    beschrijving = f"Wil je de {'witte' if white else 'gekleurde'} dobbelstenen {f'van {Scorekaart.players[startindex].player} ' if startindex != index else ''}gebruiken?"
+    window.add_text(speler.player, frame_kaart, 0, 0, grid=True, columnspan=2, font=('Calibri', 20, 'bold'))
+    beschrijving = f"Wil je de {'witte' if white else 'gekleurde'} dobbelstenen {f'van {Scorekaart.players[0].player} ' if speler != Scorekaart.players[0] else ''}gebruiken?"
     window.add_text(beschrijving, frame_kaart, x_pos=3, y_pos=0, grid=True, columnspan=8, font=('Calibri', 15, 'bold'))
-    for i, row in enumerate(Scorekaart.players[index].rows, 1):
+    for i, row in enumerate(speler.rows, 1):
         for j,box in enumerate(row.boxes):
             values = Values('White' if white else row.color, dice)
             #Verschillende type knoppen toevoegen
@@ -501,9 +505,9 @@ def kiezen(root, index, startindex, dice, callback, white=True):
     for i, die in enumerate(dice):
         window.add_die_img(frame_dice, die, i)
     #Pas-knop toevoegen
-    window.add_confirm(callback, f"{'Pas' if Scorekaart.players[index].gebruikt1 or white else 'Mislukte worp'}",610, 410)
+    window.add_confirm(callback, f"{'Pas' if speler.gebruikt1 or white else 'Mislukte worp'}",610, 410)
     #Mislukte worpen toevoegen
-    window.add_failed(Scorekaart.players[index], 780, 410)
+    window.add_failed(speler, 780, 410)
 
 #Controleer of waarde is toegestaan
 def toegestaan(box, row, values, dice):

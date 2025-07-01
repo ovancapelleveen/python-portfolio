@@ -1,6 +1,8 @@
 import tkinter as tk
+from tkinter import Frame, Button, Label, Canvas
 import os
 from PIL import ImageTk, Image
+from PIL.ImageTk import PhotoImage
 from random import shuffle
 from sys import exit
 
@@ -13,6 +15,7 @@ class Card:
     # image_folder = f'.\\Speelkaarten'
     bg_loc = os.path.join(image_folder, 'achterkant.png')
     # bg_loc = f'{image_folder}\\bg_red.png'
+    imagesize = (121,150)
 
     def __init__(self, suit: str, rank: str):
         """Initialisatie van speelkaart met kleur en rang."""
@@ -20,7 +23,7 @@ class Card:
         self.rank = rank
         self.order = Card.values[rank]
         self.player = ''
-        self.image_loc = f'{Card.image_folder}\\{suit}_10.png'
+        self.image_loc = f'{Card.image_folder}\\{suit}_{rank}.png'
         self.img = Image.open(self.image_loc).resize((121,150))
 
     # def display(self, id):
@@ -31,8 +34,11 @@ class Card:
         """Voor het printen van kaarten."""
         return f'{self.suit} {self.rank} van {self.player}'
     
-
 class Player:
+    aantal = 0
+    players = []
+    losers = []
+
     """Representatie van een collectie van kaarten."""
     def __init__(self, name: str, deck: bool=False):
         """Initialisatie van de speler."""
@@ -50,6 +56,7 @@ class Player:
         self.rondescore = 0.
         self.rondewinst = 0
         self.rondehand = ''
+        self.blind = ''
 
     def add_card(self, card):
         """Specifieke kaart toevoegen aan collectie."""
@@ -102,6 +109,7 @@ class Player:
         self.rondescore = 0
         self.rondewinst = 0
         self.rondehand = ''
+        self.blind = ''
         deck.draw(self, 2)
 
     def add_inzet(self, num):
@@ -112,23 +120,6 @@ class Player:
         else:
             self.inzet += num
             self.geld -= num
-
-    def bevestigen(self):
-        """Speler laten bevestigen voor de kaarten worden getoond."""
-        window = Window('Bevestigen')
-
-        window.add_frame(window.frame_top, 950,450)
-        img_bg = ImageTk.PhotoImage(Image.open(Card.bg_loc).resize((120,150)))
-        window.images.append(img_bg)
-        # Create a Label Widget to display the text or Image
-        lbl_card = tk.Label(master=window.frame_top, image=img_bg)
-        lbl_card.grid(row=0, column=0)
-        window.add_label(f'\nHet is nu de beurt van {self.name}.\nBevestig dat jij deze speler bent.', window.frame_top, 0, 1, grid=True, font=('calibri',15,'normal'))
-
-        #Start en stopknoppen
-        window.add_confirm(window.close, 950, 650)
-
-        window.run()
     
     def __repr__(self):
         """Voor het printen van een speler."""   
@@ -140,27 +131,18 @@ class Window():
     """Representatie van een speelscherm."""
     bg_color = 'pink'
     fg_color = 'black'
+    width = 1900
+    height = 1000
 
-    def __init__(self, naam=None):
-        """Initialisatie van het scherm."""
-        self.window = tk.Tk()
+    def __init__(self, parent, naam=None):
+        self.window = parent
         self.naam = naam
-        self.window.title("Poker")
-        self.window.geometry('1900x1000+0+0')
-        self.window.minsize(1900,1000)
-        self.window.maxsize(1900,1000)
-        self.window.configure(background=Window.bg_color)
-        self.frame_top, self.frame_bot, self.frame_text, self.frame_confirm, self.frame_inzet, self.frame_extra = [tk.Frame(self.window, relief=tk.FLAT, bd=5, bg=Window.bg_color) for _ in range(6)]
-        self.frame1_t, self.frame2_t, self.frame3_t, self.frame4_t, = [tk.Frame(self.frame_top, relief=tk.FLAT, bd=5, bg=Window.bg_color) for _ in range(4)]
-        self.frame1, self.frame2, self.frame3, self.frame4, = [tk.Frame(self.window, relief=tk.FLAT, bd=5, bg=Window.bg_color) for _ in range(4)]
-        if naam != 'Start':
-            #Sluit knop altijd toevoegen als het niet het startscherm is.
-            button = tk.Button(master=self.window, text=f"Sluit spel", borderwidth=5, command=exit)
-            self.place_button(button, 1850, 40)
-        #Bewaar plaatjes van kaarten om te laten zien
+        self.window.title(naam)
         self.images = []
-        self.window.focus_force()
-    
+        #Root leegmaken bij volgende aanroep
+        for widget in parent.winfo_children():
+            widget.destroy()
+
     def on_enter(self, button, relief=tk.SUNKEN, color=None):
         """Verander relief van een knop als de cursor erover hovered."""
         button['relief'] = relief
@@ -172,49 +154,61 @@ class Window():
         if color:
             button['color'] = color
 
-    def add_frame(self, frame, x_pos= None, y_pos=None, grid=False, anchor_=tk.CENTER, **kwargs):
+    def add_frame(self, master=None, x_pos=None, y_pos=None, grid=False, anchor_=tk.CENTER, **kwargs):
+        """Frame toevoegen aan het scherm."""
+        if not master:
+            master = self.window
+        frame = Frame(master, relief=tk.FLAT, bd=5, bg=Window.bg_color)
+        self.place_widget(frame, x_pos, y_pos, grid, anchor_, **kwargs)
+        return frame
+    
+    def place_widget(self, frame, x_pos=None, y_pos=None, grid=False, anchor_=tk.CENTER, **kwargs):
         """Frame toevoegen aan het scherm."""
         padx = None if 'padx' not in kwargs else kwargs['padx']
         pady = None if 'pady' not in kwargs else kwargs['pady']
+        columnspan = None if 'columnspan' not in kwargs else kwargs['columnspan']
         if grid:
-            frame.grid(column=x_pos, row=y_pos, sticky="nsew",padx=padx, pady=pady)
+            frame.grid(column=x_pos, row=y_pos, sticky="nsew",padx=padx, pady=pady, columnspan=columnspan)
         elif x_pos and y_pos:
             frame.place(x=x_pos, y=y_pos, anchor=anchor_,padx=padx, pady=pady)
         else:
             frame.pack(padx=padx, pady=pady)
 
-    def add_label(self, text, frame=None, x_pos=None, y_pos=None, **kwargs):
+    #Tekst-bericht toevoegen
+    def add_text(self, text, frame=None, x_pos=None, y_pos=None, **kwargs):
         """Label toevoegen aan een frame."""
         if text:
             if not frame:
                 frame = self.window
-            label = tk.Label(master=frame, text=text, bg=Window.bg_color, fg=Window.fg_color)
+            label = Label(master=frame, text=text, bg=Window.bg_color, fg=Window.fg_color, font=('calibre',10,'normal'))
             for key, value in kwargs.items():
                 try:
                     label[key] = value
                 except Exception:
                     pass
-            self.add_frame(label, x_pos, y_pos, **kwargs)
+            self.place_widget(label, x_pos, y_pos, **kwargs)
 
-    def add_image(self, frame, image_, num):
+
+    def add_image(self, frame, image_, x_pos, y_pos, grid=True, **kwargs):
         """Afbeelding toevoegen aan het frame."""
-        return tk.Label(master=frame, image=image_, bg=Window.bg_color).grid(row=0, column=num)
-    def add_cards(self, speler, frame, label, x_pos=None, y_pos=None, anchor=tk.CENTER, grid=False):
+        image = Label(master=frame, image=image_, bg=Window.bg_color)
+        self.place_widget(image, x_pos, y_pos, grid, **kwargs)
+
+    def add_cards(self, speler, label, master=None, x_pos=None, y_pos=None, anchor=tk.CENTER, grid=False):
         """Kaarten van een speler toevoegen aan een frame."""
         if speler and speler.cards:
-            self.add_frame(frame, x_pos, y_pos, anchor_=anchor, grid=grid)
-            frame["bg"]=Window.bg_color
-            tk.Label(master=frame, text=label, bg=Window.bg_color, fg=Window.fg_color,font=('calibre',10,'bold')).grid(row=1, column=0, columnspan=speler.size)
+            frame_cards = self.add_frame(master=master, x_pos=x_pos, y_pos=y_pos, anchor_=anchor, grid=grid)
+            self.add_text(label, frame_cards, 0, 1, grid=True, columnspan=speler.size)
             for id_, kaart in enumerate(speler.cards):
                 # Create an object of tkinter ImageTk
-                img = ImageTk.PhotoImage(kaart.img)
+                img = PhotoImage(kaart.img)
                 self.images.append(img)
-                self.add_image(frame, img, id_)
+                self.add_image(frame_cards, img, id_, 0, padx=5)
 
-    def add_card_canvas(self,speler, label, x_pos=None, y_pos=None):
+    def add_card_canvas(self, speler, label='', x_pos=None, y_pos=None):
             #Tafel weergeven
-        canvas = tk.Canvas(self.window,bg=Window.bg_color,highlightthickness=0,height=450, width=1000)
-        self.add_frame(canvas, x_pos, y_pos)
+        canvas = Canvas(self.window,bg=Window.bg_color,highlightthickness=0,height=450, width=1000)
+        self.place_widget(canvas, x_pos, y_pos)
 
         #Tafel weergeven
         canvas.create_oval(0, 0, 450,450,fill="brown")
@@ -227,9 +221,9 @@ class Window():
             # canvas.create_window(500,130, window=label)
             for id_, kaart in enumerate(speler.cards):
                 # Create an object of tkinter ImageTk
-                img = ImageTk.PhotoImage(kaart.img)
+                img = PhotoImage(kaart.img)
                 self.images.append(img)
-                image = tk.Label(master=canvas, image=img, bg="brown")
+                image = Label(master=canvas, image=img, bg="brown")
                 canvas.create_window(id_*150+200, 230, window=image)
 
     def add_inzet(self, spelers):
@@ -238,22 +232,21 @@ class Window():
         def sort_order(input):
             """Sorteer volgorde van de kaarten vaststellen."""
             return input.geld
-    
-        self.add_frame(self.frame_extra, 200, 200)
-        self.frame_extra["bg"] = "black"
-        # self.frame_extra["bd"] = 0
+        frame_stand = self.add_frame(x_pos=200, y_pos=200)
+        frame_stand["bg"] = "black"
+        # frame_stand["bd"] = 0
 
         #Maak een kopie zodat de volgorde niet wijzigd.
         spelers = spelers.copy()
         spelers.sort(key=sort_order, reverse=True)
 
-        self.add_label('-', self.frame_extra, x_pos=0, y_pos=0, grid=True, font=('calibre',10,'bold'), fg=Window.bg_color, width=12)
-        self.add_label('Inzet', self.frame_extra, x_pos=1, y_pos=0, grid=True, font=('calibre',10,'bold'), padx=(0,1), width=12)
-        self.add_label('Huidige\nmonies', self.frame_extra, x_pos=2, y_pos=0, grid=True, font=('calibre',10,'bold'), width=12)
+        self.add_text('-', frame_stand, x_pos=0, y_pos=0, grid=True, font=('calibre',10,'bold'), fg=Window.bg_color, width=12)
+        self.add_text('Inzet', frame_stand, x_pos=1, y_pos=0, grid=True, font=('calibre',10,'bold'), padx=(0,1), width=12)
+        self.add_text('Huidige\nmonies', frame_stand, x_pos=2, y_pos=0, grid=True, font=('calibre',10,'bold'), width=12)
         for i, speler in enumerate(spelers,1):
-            self.add_label(f"{speler.name}", self.frame_extra, x_pos=0, y_pos=i, grid=True, font=('calibre',10,'bold'), padx=(0,1), pady=(1,0), height=3)
-            self.add_label(f"{speler.inzet}", self.frame_extra, x_pos=1, y_pos=i, grid=True, font=('calibre',10,'bold'), padx=(0,1), pady=(1,0))
-            self.add_label(f"{speler.geld}", self.frame_extra, x_pos=2, y_pos=i, grid=True, font=('calibre',10,'bold'), pady=(1,0))
+            self.add_text(f"{speler.name}", frame_stand, x_pos=0, y_pos=i, grid=True, font=('calibre',10,'bold'), padx=(0,1), pady=(1,0), height=3)
+            self.add_text(f"{speler.inzet}", frame_stand, x_pos=1, y_pos=i, grid=True, font=('calibre',10,'bold'), padx=(0,1), pady=(1,0))
+            self.add_text(f"{speler.geld}", frame_stand, x_pos=2, y_pos=i, grid=True, font=('calibre',10,'bold'), pady=(1,0))
 
     def add_confirm(self, functie, x_pos, y_pos):
         """Bevestigknop toevoegen."""
@@ -261,12 +254,18 @@ class Window():
         self.place_button(button, x_pos, y_pos)
         self.window.bind('<Return>', lambda event: functie())
 
-    def place_button(self,button, x_pos, y_pos, grid=False, enter_relief=tk.SUNKEN, leave_relief=tk.RAISED, enter_color=None, leave_color=None):
+    def add_button(self, frame, tekst, x_pos, y_pos, functie, borderwidth=5, width=10, height=2, grid=False):
+        """Knop plaatsen."""
+        btn = Button(master=frame, text=tekst, borderwidth=borderwidth, width=width, height=height, bg=Window.fg_color, fg=Window.bg_color, command = functie)
+        self.place_button(btn, x_pos, y_pos, grid)
+        return btn
+
+    def place_button(self, button, x_pos=None, y_pos=None, grid=False, enter_relief=tk.SUNKEN, leave_relief=tk.RAISED, enter_color=None, leave_color=None, **kwargs):
         button['relief'] = leave_relief
-        self.add_frame(button, x_pos, y_pos, grid)
-        # button.place(x=x_pos,y=y_pos,anchor=tk.CENTER)
-        button.bind("<Enter>", lambda event, button=button, relief=enter_relief, color=enter_color: self.on_enter(button, relief, color))
-        button.bind("<Leave>", lambda event, button=button, relief=leave_relief, color=leave_color: self.on_leave(button, relief, color))
+        self.place_widget(button, x_pos, y_pos, grid, **kwargs)
+        button.bind("<Enter>", lambda event: self.on_enter(button, enter_relief, enter_color))
+        button.bind("<Leave>", lambda event: self.on_leave(button, leave_relief, leave_color))
+
 
     def close(self):
         """Sluit window."""
