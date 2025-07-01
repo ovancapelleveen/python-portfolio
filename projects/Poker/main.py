@@ -137,14 +137,6 @@ def hand_bepalen(speler, tafel):
         return (high_card, 0 + max(speler.cards, key=lambda kaart: kaart.order).order + min(speler.cards, key=lambda kaart: kaart.order).order/15, 'High card')
 
 
-# def speleinde(tekst):
-#     window = Window('Uitgeschakeld')
-#     window.add_text(tekst, x_pos=950, y_pos=450, font=('calibri',15,'bold'))
-#     window.add_confirm(window.close, 950, 650) 
-#     window.run()
-
-
-##########################################################################################################################################
 
 #Window
 @print_function_name
@@ -388,7 +380,8 @@ def spel_spelen(root):
     def check_winner():
         Player.losers += [speler for speler in Player.players if speler.geld == 0]
         Player.players = [speler for speler in Player.players if speler.geld != 0]
-        return len(Player.players) <= 1
+        Player.aantal = len(Player.players)
+        return Player.aantal <= 1
 
     def ronde_afhandelen():
         print('voor', Player.players)

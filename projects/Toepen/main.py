@@ -5,6 +5,7 @@ import os
 from PIL import Image #, ImageTk
 from PIL.ImageTk import PhotoImage
 from random import shuffle
+from itertools import cycle
 from sys import exit
 
 class Card:
@@ -13,9 +14,7 @@ class Card:
     values = ['7', '8', '9', '10', 'Boer', 'Vrouw', 'Heer', 'Aas']
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     image_folder = os.path.join(BASE_DIR, "Speelkaarten")
-    # image_folder = '.\\Speelkaarten'
     bg_loc = os.path.join(image_folder, 'achterkant.png')
-    # bg_loc = f'{image_folder}\\achterkant.png'
     imagesize = (121,150)
 
     def __init__(self, suit="0", value="0"):
@@ -23,7 +22,6 @@ class Card:
         self.value = value
         self.player = ''
         self.image_loc = os.path.join(Card.image_folder, f'{suit}_{value}.png')
-        # self.image_loc = f'{Card.image_folder}\\{suit}_{value}.png'
         self.img = Image.open(self.image_loc).resize(Card.imagesize)
 
     def __repr__(self):    
@@ -33,7 +31,6 @@ class Player:
     aantal = 3
     players = []
     losers = []
-    windex = 0
     toeper = ''
 
     def __init__(self, name, deck = False):
@@ -179,7 +176,6 @@ class Window():
             button['fg']=Window.bg_color
             button['activebackground']=Window.bg_color
         self.place_widget(button, x_pos, y_pos, grid, **kwargs)
-
         button.bind("<Enter>", lambda event: self.on_enter(button, enter_relief, enter_color, tekst))
         button.bind("<Leave>", lambda event: self.on_leave(button, leave_relief, leave_color, tekst))
 
@@ -294,6 +290,8 @@ def unique(namen):
         return False
     unique = []
     for naam in namen:
+        if len(naam.name)>10:
+            return False
         if naam.name not in unique and naam.name:
             unique.append(naam.name)
     return len(unique) == len(namen)
@@ -309,7 +307,7 @@ def create_hands():
     return deck
 
 #Window
-def bevestigen(root, functie, id):
+def bevestigen(root, functie, speler):
     window = Window(root, 'Bevestigen')
     frame_confirm = window.add_frame(x_pos=Window.width/2, y_pos=440)
 
@@ -317,47 +315,49 @@ def bevestigen(root, functie, id):
     window.images.append(img_bg)
     # Create a Label Widget to display the text or Image
     window.add_image(frame_confirm, img_bg, 0, 0)
-    window.add_label(f'Het is nu de beurt van {Player.players[id].name}.\nBevestig dat jij deze speler bent.', frame_confirm, 0, 1, grid=True)
+    window.add_label(f'Het is nu de beurt van {speler.name}.\nBevestig dat jij deze speler bent.', frame_confirm, 0, 1, grid=True)
     #Start en stopknoppen
     window.add_confirm(functie, x_pos=Window.width/2, y_pos=600)
 
 #Begin met wassen
 def was_ronde(root, deck, na_was):
-    id = -1
+    counter = -1
+    spelers = cycle(Player.players)
     def next_player():
-        nonlocal id
-        id += 1
-        if id >= len(Player.players):
+        nonlocal counter
+        counter += 1
+        speler = next(spelers)
+        if counter >= len(Player.players):
             na_was()
             return
-        bevestigen(root, wil_wassen, id)
+        bevestigen(root, lambda: wil_wassen(speler), speler)
 
-    def wil_wassen(bericht='', nieuw_deck=None):
+    def wil_wassen(speler, bericht='', nieuw_deck=None):
         nonlocal deck
         if nieuw_deck:
             deck=nieuw_deck
         if bericht == 'gelukt':
             bericht = 'Niemand controleerd de was, je trekt een nieuwe hand.'
-            Player.players[id].was(deck)
+            speler.was(deck)
         #Nee = next_player() werkt!
-        ja_nee_vraag(root, id, "Wil je wassen?", bericht, 'wassen', next_player, wil_wassen, deck)
+        ja_nee_vraag(root, speler, "Wil je wassen?", bericht, 'wassen', next_player, wil_wassen, deck)
         #Ja = Player.windex = id -> checkronde(root, wil_wassen)
     next_player()
 
 def check_ronde(root, deck, wil_wassen):
-    id_ = Player.windex
+    speler_cycle = cycle(Player.players)
+    speler = next(speler_cycle)
     def next_player():
-        nonlocal id_
-        id_ = (id_+1)%len(Player.players)
-        if id_ == Player.windex:
-            bevestigen(root, lambda: wil_wassen('gelukt'), id_)
+        speler = next(speler_cycle)
+        if speler == Player.players[0]:
+            bevestigen(root, lambda: wil_wassen(speler, 'gelukt'), speler)
             return
-        bevestigen(root, lambda var=deck: wil_checken(var), id_)
+        bevestigen(root, lambda var=deck: wil_checken(var), speler)
 
     def wil_checken(deck):
         #Nee = next_player()
-        bericht=f'{Player.players[Player.windex].name} wil wassen.'
-        ja_nee_vraag(root, id_, "Wil je checken?", bericht, 'checken', next_player, wil_wassen, deck)
+        bericht=f'{Player.players[0].name} wil wassen.'
+        ja_nee_vraag(root, speler, "Wil je checken?", bericht, 'checken', next_player, wil_wassen, deck)
         #Ja = wascontrole(root, id, na_check) 
     next_player()
 
@@ -366,41 +366,50 @@ def was_controle(root, checker, deck, na_check):
     #1 knop naar na_check
     window = Window(root, 'was_controle')
     #Kaarten toevoegen van beide spelers
-    window.add_cards(Player.players[Player.windex], f"Handkaarten {Player.players[Player.windex].name}:", x_pos=Window.width/2, y_pos=300)
-    window.add_cards(Player.players[checker], "Jouw handkaarten:", Window.width/2, 600)
+    window.add_cards(Player.players[0], f"Handkaarten {Player.players[0].name}:", x_pos=Window.width/2, y_pos=300)
+    window.add_cards(checker, "Jouw handkaarten:", Window.width/2, 600)
 
-    if Player.players[Player.windex].wascheck():
+    if Player.players[0].wascheck():
         resultaat = 'Het was een correcte was, je krijgt daarvoor een strafpunt.'
-        bericht = f"Het was een correcte was en werd gecontroleerd, {Player.players[checker].name} kreeg daarvoor een strafpunt. Je ontvangt een nieuwe hand."
-        Player.players[checker].add_score()
-        Player.players[Player.windex].was(deck)
+        bericht = f"Het was een correcte was en werd gecontroleerd, {checker.name} kreeg daarvoor een strafpunt. Je ontvangt een nieuwe hand."
+        checker.add_score()
+        Player.players[0].was(deck)
     else:
-        resultaat = f"Het was een foute was. {Player.players[Player.windex].name} krijgt een strafpunt."
-        bericht = f"Het was een foute was en werd gecontroleerd door {Player.players[checker].name}, je kreeg daarvoor een strafpunt."
-        Player.players[Player.windex].add_score()
+        resultaat = f"Het was een foute was. {Player.players[0].name} krijgt een strafpunt."
+        bericht = f"Het was een foute was en werd gecontroleerd door {checker.name}, je kreeg daarvoor een strafpunt."
+        Player.players[0].add_score()
     #Tekst toevoegen
     window.add_label(resultaat, x_pos=Window.width/2, y_pos=170)
     #Bevestigknop toevoegen
-    window.add_confirm(lambda: bevestigen(root, lambda: na_check(bericht, deck), Player.windex), Window.width/2, 750)
+    window.add_confirm(lambda: bevestigen(root, lambda: na_check(Player.players[0], bericht, deck), Player.players[0]), Window.width/2, 750)
+
+def next_starter(inputlist, start):
+    if start in inputlist:
+        while inputlist[0] != start:
+            inputlist = inputlist[1:] + inputlist[:1]
+    else: 
+        raise ValueError("Start zit niet in de inputlijst")
+    return inputlist
+
 
 #Window
-def ja_nee_vraag(root, speler_id, vraag, bericht, vraagtype, functie_nee, callback, deck=None, pile = None):
+def ja_nee_vraag(root, speler, vraag, bericht, vraagtype, functie_nee, callback, deck=None, pile = None):
 
     def confirm(var):
         if var=='wassen':
-            Player.windex = speler_id
+            Player.players = next_starter(Player.players, speler)
             check_ronde(root, deck, callback)
         elif var=='checken':
-            was_controle(root, speler_id, deck, callback)
+            was_controle(root, speler, deck, callback)
         elif var=='toepen':
-            Player.players[speler_id].add_rondescore()
+            speler.add_rondescore()
             callback()
 
     def deny(var):
         if var=='wassen' or var=='checken':
             functie_nee()
         elif var=='toepen':
-            Player.players[speler_id].add_score(0)
+            speler.add_score(0)
             functie_nee()
 
     # Create an instance of tkinter window
@@ -411,7 +420,7 @@ def ja_nee_vraag(root, speler_id, vraag, bericht, vraagtype, functie_nee, callba
     #Gespeelde kaarten toevoegen
     window.add_cards(pile, 'Gespeelde kaarten:', Window.width/2, 300, players = True)
     #Kaarten toevoegen
-    window.add_cards(Player.players[speler_id], "Handkaarten:", Window.width/2, 600)
+    window.add_cards(speler, "Handkaarten:", Window.width/2, 600)
 
     frame_confirm = window.add_frame(x_pos=Window.width/2, y_pos=750)
     window.add_label(vraag, frame_confirm, 0, 0, grid=True, columnspan=2)
@@ -440,13 +449,12 @@ def bekennen(speler, pile):
     return suit, bericht
 
 #Window
-def choose_card(root, id, pile, valid, bericht, na_selectie):
+def choose_card(root, speler, pile, valid, bericht, na_selectie):
     # print('choose_card()')
-    speler = Player.players[id]
 
     def extract_card(kaart:Card):
         # print(f'extract_card({kaart=})')
-        Player.players[id].selected_card = kaart
+        speler.selected_card = kaart
         na_selectie()
 
     def niet_toegestaan(kaart:Card):
@@ -479,12 +487,12 @@ def choose_card(root, id, pile, valid, bericht, na_selectie):
 def speel_slag(root, na_slag):
     # print('uitvoeren: speel_slag()')
     pile = Player('Pile')
-    id_ = (Player.windex-1)%len(Player.players)
     turncounter = -1
+    spelers = cycle(Player.players)
 
     def next_turn():
         # print('speel_slag: next_turn()')
-        nonlocal id_, turncounter
+        nonlocal turncounter
         turncounter += 1
         # print(f'{turncounter=}')
         #Spelers die nog meedoen bepalen na automatische toep, en stoppen als dit niemand is.
@@ -494,17 +502,17 @@ def speel_slag(root, na_slag):
             na_slag(root, pile, actief_naam)
             return
 
-        id_ = (id_+1)%len(Player.players)
-        if Player.players[id_].name in actief_naam:
-            bevestigen(root, playerTurn, id_)
+        speler = next(spelers)
+        if speler.name in actief_naam:
+            bevestigen(root, lambda: playerTurn(speler), speler)
         else:
             next_turn()
 
-    def playerTurn(getoept=False):
+    def playerTurn(speler, getoept=False):
         # print(f'speel_slag: playerTurn({getoept})')
         #Bepaal of er kleur moet worden bekend
-        suit, bericht = bekennen(Player.players[id_], pile)
-        valid_cards = [card for card in Player.players[id_].cards if card.suit == suit or suit == '']
+        suit, bericht = bekennen(speler, pile)
+        valid_cards = [card for card in speler.cards if card.suit == suit or suit == '']
 
         if getoept:
             actief = [speler for speler in Player.players if speler.rondescore != 0]
@@ -513,49 +521,51 @@ def speel_slag(root, na_slag):
                 na_slag(root, pile, actief_naam)
                 return
             else:
-                Player.players[id_].add_rondescore()
+                speler.add_rondescore()
 
         # print(Player.players[id_])
         def vervolg_na_keuze():
             # print('vervolg_na_keuze')
             # print(f'{Player.players[id_].selected_card=}')
-            if Player.players[id_].selected_card.suit == "0":
-                Player.toeper = Player.players[id_].name
-                toep_ronde(root, id_, lambda: bevestigen(root, lambda: playerTurn(True), id_))
+            if speler.selected_card.suit == "0":
+                Player.toeper = speler.name
+                toep_ronde(root, speler, lambda: bevestigen(root, lambda: playerTurn(speler, True), speler))
                 return
             else:
-                Player.players[id_].play_card(Player.players[id_].selected_card, pile)
+                speler.play_card(speler.selected_card, pile)
                 next_turn()
     
-        choose_card(root, id_, pile, valid_cards, bericht, vervolg_na_keuze)
+        choose_card(root, speler, pile, valid_cards, bericht, vervolg_na_keuze)
 
     #Eerste beurt van de slag instantieren
     next_turn()
 
 
-def toep_ronde(root, toeper_id, na_toepronde, auto=False, toepers=[]):
+def toep_ronde(root, toeper, na_toepronde, auto=False, toepers=[]):
     # print(f'uitvoeren: toep_ronde({toeper_id=})')
-    id_ = toeper_id
+
+    toep_spelers = cycle(next_starter(Player.players, toeper))
+    next(toep_spelers)
 
     def next_player():
         # print('toep_ronde: next_player()')
-        nonlocal id_
-        id_ = (id_+1)%len(Player.players)
-        if id_ == toeper_id:
+        speler = next(toep_spelers)
+        print(speler, toeper)
+        if speler == toeper:
             na_toepronde()
             return
-        if Player.players[id_].name in toepers:
+        if speler.name in toepers or speler.rondescore == 0:
             next_player()
             return
-        bevestigen(root, wil_mee, id_)
+        bevestigen(root, lambda: wil_mee(speler), speler)
 
-    def wil_mee():
+    def wil_mee(speler):
         # print('toep_ronde: wil_mee()')
         if not auto:
             toep_bericht = f"{Player.toeper} heeft getoept."
         else:
             toep_bericht = f"{' en '.join(toepers)} {'toept' if len(toepers) == 1 else 'toepen'} automatisch."  
-        ja_nee_vraag(root, id_, "Ga je mee?", toep_bericht, 'toepen', next_player, next_player)
+        ja_nee_vraag(root, speler, "Ga je mee?", toep_bericht, 'toepen', next_player, next_player)
 
     next_player()
 
@@ -568,7 +578,7 @@ def speel_ronde(root, eindscore, na_speelronde):
         actief = [speler for speler in Player.players if speler.rondescore != 0]
         if len(actief) == 1 or len(actief[0].cards) == 0:
             for index, speler in enumerate(Player.players):
-                if index != Player.windex:
+                if index != 0:
                     speler.add_score()
                 elif boerenfinish:
                     speler.score -= 1
@@ -598,21 +608,20 @@ def speel_ronde(root, eindscore, na_speelronde):
             winnende_kaart = None
 
         #windex aanpassen naar de winnaar van de slag
-        Player.windex = next(i for i, s in enumerate(Player.players) if s.name == winnaar)
-        # print(f'{Player.windex=}')
+        Player.players = next_starter(Player.players, next(speler for speler in Player.players if speler.name == winnaar))
         slag_uitslag(root, lambda: next_slag(boerenfinish), pile, winnende_kaart)
 
     Player.toeper = ''
     toepers = []
-    for id, speler in enumerate(Player.players):
+    for speler in Player.players:
         if speler.score == eindscore-1:
             toepers.append(speler.name)
-            Player.windex = id
+            Player.players = next_starter(Player.players, speler)
     # print(f'{toepers=}')
     #Als er mensen automatisch toepen wordt dit uitgevoerd.
     if toepers:
         Player.toeper = 'automatisch'
-        toep_ronde(root, Player.windex, next_slag, auto=True, toepers=toepers)
+        toep_ronde(root, Player.players[0], next_slag, auto=True, toepers=toepers)
         return
     #Eerste slag van de ronde instantieren
     next_slag()
@@ -625,7 +634,7 @@ def slag_uitslag(root, functie, pile, winnende_kaart=None):
     if winnende_kaart:
         window.add_label(f'\nDe slag is gewonnen door {winnende_kaart.player} met een {winnende_kaart}.', x_pos=Window.width/2, y_pos=600)
     else:
-        window.add_label(f'\nDe slag is gewonnen door {Player.players[Player.windex]}, er zijn geen andere spelers over.', x_pos=Window.width/2, y_pos=600)
+        window.add_label(f'\nDe slag is gewonnen door {Player.players[0].name}, er zijn geen andere spelers over.', x_pos=Window.width/2, y_pos=600)
     #Start en stopknoppen
     window.add_confirm(functie, Window.width/2, 800)
 
@@ -637,7 +646,7 @@ def ronde_uitslag(root, boerenfinish, functie):
     window.images.append(img_bg)
     # Create a Label Widget to display the text or Image
     window.add_image(frame_score, img_bg, 0, 0)
-    window.add_label(f"\nDe ronde is gewonnen door {Player.players[Player.windex].name}. \n{'Met een boerenfinish!' if boerenfinish else ''}", frame_score, 0, 1, grid=True)
+    window.add_label(f"\nDe ronde is gewonnen door {Player.players[0].name}. \n{'Met een boerenfinish!' if boerenfinish else ''}", frame_score, 0, 1, grid=True)
     #Start en stopknoppen
     window.add_confirm(functie, Window.width/2, 800)
 
