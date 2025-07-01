@@ -1,199 +1,20 @@
 import tkinter as tk
-from PIL import ImageTk, Image
+from tkinter import Tk, Button
+from PIL import Image #, ImageTk
+from PIL.ImageTk import PhotoImage
+# from PIL import ImageTk, Image
 from sys import exit
 from collections import Counter
 from itertools import cycle
 from Poker_classes import Player, Window, Card
 
 
-def spelerbeurt(speler, spelers, tafel, blind=None):
-    """Beurt van een speler uitvoeren
-    
-    :param speler: Speler die aan de beurt is.
-    :param spelers: Lijst met alle spelers voor de weergave van de inzet.
-    :param tafel: Collectie met kaarten die op tafel liggen
-    :param blind: Optionele waarde voor de grote of kleine blind.
-    """
-    def aanpassen(aantal, max, knop):
-        nonlocal inzet_num
-        lbl_value["text"] += aantal
-        if lbl_value["text"] <= 0:
-            lbl_value["text"] = 0
-            knop["text"] = "Call"
-        if lbl_value["text"] > 0:
-            knop["text"] = "Verhogen"
-        if lbl_value["text"] >= max:
-            lbl_value["text"] = max
-            knop["text"] = "All-in"
-        inzet_num = lbl_value['text']
+def print_function_name(func):
+    def wrapper(*args, **kwargs):
+        print(f"Calling function: {func.__name__}")
+        return func(*args, **kwargs)
+    return wrapper
 
-    def inzetten(speler, spelers):
-        nonlocal inzet_num
-        max_inzet = max(spelers, key=lambda speler: speler.inzet).inzet
-        inzet_temp = max_inzet - speler.inzet + inzet_num
-        speler.add_inzet(inzet_temp)
-        window.close()
-        
-    def fold(speler):
-        speler.fold = True
-        window.close()
-
-    inzet_num = 0
-    #Initialiseer window
-    window = Window('Spelerbeurt')
-    #Handkaarten van de speler weergeven
-    window.add_cards(speler, window.frame_bot, 'Handkaarten', 950, 800)
-    #Tafel weergeven
-    window.add_card_canvas(tafel, 'Tafelkaarten:', 950, 350)
-    print(spelers)
-    #Inzet-tussenstand weergeven
-    window.add_inzet(spelers)
-    print(spelers)
-    if blind:
-        window.add_label(f'Je bent de {blind} blind', x_pos=950, y_pos=650, font=('calibri',15,'normal'))
-
-    #Call/Raise knop
-    call_button = tk.Button(master=window.window, text="Call", borderwidth=5, width=10, height=2, command= lambda speler=speler, spelers=spelers: inzetten(speler,spelers))
-    window.place_button(call_button, 1650, 900)
-    #Fold
-    fold_button = tk.Button(master=window.window, text="Fold", borderwidth=5, width=10, height=2, command= lambda speler=speler: fold(speler))
-    window.place_button(fold_button, 1750, 900)
-    
-    if not blind == 'big':
-        #Inzet-knoppen toevoegen
-        window.add_frame(window.frame_inzet, 1700, 750)
-        window.frame_inzet["bg"] = "red"
-
-        button_100 = tk.Button(master=window.frame_inzet, text="+100", fg='green', command= lambda aantal=100, max=speler.geld, knop=call_button: aanpassen(aantal, max, knop))
-        window.place_button(button_100, 0, 0, True)
-        button_10 = tk.Button(master=window.frame_inzet, text="+10", fg='green', command= lambda aantal=10, max=speler.geld, knop=call_button: aanpassen(aantal, max, knop))
-        window.place_button(button_10, 0, 1, True)
-        button_1 = tk.Button(master=window.frame_inzet, text="+1", fg='green', command= lambda aantal=1, max=speler.geld, knop=call_button: aanpassen(aantal, max, knop))
-        window.place_button(button_1, 0, 2, True)
-        lbl_value = tk.Label(master=window.frame_inzet, text=0, font=('calibre', 15, 'bold'), borderwidth=5, relief=tk.RIDGE, width=10, height=2)
-        lbl_value.grid(row=3, column=0)
-        button_n1 = tk.Button(master=window.frame_inzet, text="-1", fg='red', command= lambda aantal=-1, max=speler.geld, knop=call_button: aanpassen(aantal, max, knop))
-        window.place_button(button_n1, 0, 4, True)
-        button_n10 = tk.Button(master=window.frame_inzet, text="-10", fg='red', command= lambda aantal=-10, max=speler.geld, knop=call_button: aanpassen(aantal, max, knop))
-        window.place_button(button_n10, 0, 5, True)
-        button_n100 = tk.Button(master=window.frame_inzet, text="-100", fg='red', command= lambda aantal=-100, max=speler.geld, knop=call_button: aanpassen(aantal, max, knop))
-        window.place_button(button_n100, 0, 6, True)
-
-    #Je kan op enter drukken om te callen/verhogen
-    window.window.bind('<Return>', lambda event, speler=speler, spelers=spelers: inzetten(speler,spelers))
-    #Open window
-    window.run() 
-
-#Kiesmenu voor het aantal spelers en de spelernamen
-def kiesmenu(tekst: str='', aantal: int=None, bericht: str=None,) -> int | list:
-    """Laat window zien om het aantal spelers te bepalen, of de namen in te vullen.
-
-    :param tekst: Toelichting met mogelijk aantal spelers.
-    :param aantal: Aantal deelnemende spelers.
-    :param bericht: Foutmelding als de spelernamen niet uniek zijn.
-    :return output: Aantal spelers (2-4), of een lijst met Spelers.
-    """
-    output = None
-
-    def submit(var):
-        """Geef output terug."""
-        nonlocal output
-        if type(var) == list:
-            output = []
-            for n in var:
-                output.append(Player(n.get()))
-            window.close()
-        else:
-            output = var.get()
-            if output in [2,3,4]:
-                window.close()
-
-    #Window initieren
-    window = Window('Kiesmenu')
-    #Errormelding toevoegen als deze er is
-    window.add_label(bericht, x_pos=960, y_pos=400, font=('calibri',15,'bold'))
-    #Frame klaarzetten voor de input-velden
-    window.add_frame(window.frame_top, 950, 500)
-    #Velden toevoegen
-    if not aantal:
-        #Int veld voor aantal spelers
-        var=tk.IntVar()
-        var.set('')
-        input = tk.Entry(window.frame_top, textvariable=var, font=('calibre', 10,'normal'))
-        input.grid(row=0,column=1)
-        input.focus_force()
-        window.add_label(f'Aantal {tekst}:', window.frame_top, 0, 0, grid=True, font=('calibre', 10, 'bold'))
-    else:
-        #Str-velden voor de spelernamen
-        tk.Label(window.frame_top, text=f'Vul de namen in (maximaal 10 tekens):', font=('calibre', 10, 'bold'), bg=Window.bg_color, fg=Window.fg_color).grid(row=0,column=0,columnspan=2)
-        var = [tk.StringVar() for _ in range(aantal)]
-        for i in range(aantal):
-            input = tk.Entry(window.frame_top, textvariable=var[i], font=('calibre',10,'normal'))
-            input.grid(row=i+1,column=1)
-            if i == 0:
-                input.focus_force()
-            window.add_label(f'Speler {i+1}:', window.frame_top, 0, i+1, grid=True, font=('calibre',10, 'bold'))
-
-    #Bevestig-knop onderaan
-    window.add_confirm(lambda var=var: submit(var), x_pos=950, y_pos=650)
-
-    window.run()
-    return output
-
-def startmenu():
-    """Laat scherm zien met het startmenu."""
-    window = Window('Start')
-    window.add_frame(window.frame_text, 950, 450)
-    window.add_frame(window.frame_confirm, 950, 700)
-    #Afbeelding toevoegen
-    img_bg = ImageTk.PhotoImage(Image.open(Card.bg_loc).resize((120,150)))
-    # Create a Label Widget to display the text or Image
-    tk.Label(master=window.frame_text, image=img_bg, bg=Window.bg_color).pack()
-    window.add_label("\nWil je een potje spelen?", window.frame_text, font=('calibri',15,'normal'))
-    #Start en stopknoppen
-    startbutton=tk.Button(master=window.frame_confirm, text=f"Start", borderwidth=5, width=10, height=2, command=window.close)
-    window.place_button(startbutton, 0, 0, True)
-    exitbutton=tk.Button(master=window.frame_confirm, text=f"Sluit spel", borderwidth=5, width=10, height=2,command=exit)
-    window.place_button(exitbutton, 1, 0, True)
-
-    window.window.bind('<Return>', lambda event: window.close())
-    window.run()
-
-
-def unique(namen:list) -> bool:
-    """Check of de ingevulde namen uniek zijn.
-    
-    :param namen: Lijst met ingevoerde namen.
-    """
-    if not namen:
-        return False
-    unique = []
-    for naam in namen:
-        if len(naam.name)>10:
-            return False
-        if naam.name not in unique and naam.name:
-            unique.append(naam.name)
-    return len(unique) == len(namen)
-
-def blinds(spelers:list, index:int):
-    """Blind inzet toevoegen bij startspeler(s).
-    
-    :param spelers: Lijst met de spelers.
-    :param index: Index van de startspeler in de lijst.    
-    """
-    spelers[index].add_inzet(50)
-    spelers[(index+1)%len(spelers)].add_inzet(25)
-
-def gelijke_inzet(spelers: list) -> bool:
-    """Check of elke speler die nog meedoet gelijke inzet heeft.
-
-    :param spelers: Lijst met alle spelers.
-    """
-    max_inzet = max(spelers, key=lambda speler: speler.inzet).inzet
-    for speler in spelers:
-        if speler.inzet != max_inzet and not speler.fold and not speler.geld == 0:
-            return False
-    return True
 
 def is_flush(kaarten:list):
     """Check of de hand een flush bevat.
@@ -232,43 +53,6 @@ def is_straight_flush(kaarten:list):
         if straight:
             return True, ranks
     return False, []
-
-
-def wincheck(spelers:list, tafel):
-    """
-    Bepaal handen van alle spelers, en daarmee de winnaar van de ronde.
-
-    :param spelers: Lijst met spelers.
-    :type spelers: list
-    :param tafel: Tafelkaarten
-    :type tafel: Player()
-    """
-    for speler in spelers:
-        speler.rondekaarten, speler.rondescore, speler.rondehand = hand_bepalen(speler, tafel)
-        print(speler, speler.rondekaarten, speler.rondescore, speler.inzet, speler.geld)
-        print("-"*50)
-
-    winnaars = [speler for speler in spelers if speler.fold == False]
-    while winnaars:
-        winnaar = max(winnaars, key=lambda speler: speler.rondescore)
-
-        winnaar_inzet = winnaar.inzet
-        for speler in spelers:
-            if winnaar_inzet < speler.inzet:
-                winst = winnaar_inzet
-            else:
-                winst = speler.inzet
-            winnaar.geld += winst
-            winnaar.rondewinst += winst
-            speler.inzet -= winnaar_inzet
-            if speler.inzet < 0:
-                speler.inzet = 0
-
-        #Winnaar uit de lijst verwijderd.
-        for index, speler in enumerate(winnaars):
-            if speler.name == winnaar.name:
-                winnaars.pop(index)
-                break
 
 
 def hand_bepalen(speler, tafel):
@@ -353,66 +137,353 @@ def hand_bepalen(speler, tafel):
         return (high_card, 0 + max(speler.cards, key=lambda kaart: kaart.order).order + min(speler.cards, key=lambda kaart: kaart.order).order/15, 'High card')
 
 
-def speelronde(spelers, index):
+# def speleinde(tekst):
+#     window = Window('Uitgeschakeld')
+#     window.add_text(tekst, x_pos=950, y_pos=450, font=('calibri',15,'bold'))
+#     window.add_confirm(window.close, 950, 650) 
+#     window.run()
+
+
+##########################################################################################################################################
+
+#Window
+@print_function_name
+def kiesmenu_aantal(root, lowerbound=2, upperbound=4):
+
+    def submit_num(var):
+        Player.aantal = var.get()
+        if lowerbound <= Player.aantal <= upperbound:
+            kiesmenu_spelers(root)
+        else:
+            window.add_text('Dat aantal is niet toegestaan!', x_pos=Window.width/2, y_pos=140)
+
+    #Window initieren
+    window = Window(root, 'Kiesmenu_aantal')
+    # Create frames for top, bottom, and confirm sections
+    frame_entries = window.add_frame(x_pos=Window.width/2, y_pos=240)
+    #Velden toevoegen
+    var=tk.IntVar()
+    var.set(lowerbound)
+    window.add_text(f'Aantal spelers (2-4): ', frame_entries, 0, 0, grid=True)
+    inputfield = tk.Entry(frame_entries, textvariable = var, font=('calibre',10,'normal'))
+    window.place_widget(inputfield, 1, 0, grid=True)
+    inputfield.focus_force()
+    #Bevestig-knop onderaan
+    window.add_confirm(lambda: submit_num(var), x_pos=Window.width/2, y_pos=400)
+
+#Window
+@print_function_name
+def kiesmenu_spelers(root):
+
+    def submit_name(var):
+        Player.players = []
+        for n in var:
+            Player.players.append(Player(n.get()))
+        if unique(Player.players):
+            spel_spelen(root)
+        else:
+            window.add_text('Er mogen geen dubbele namen of lege velden zijn!', x_pos=Window.width/2, y_pos=140)
+    #Window initieren
+    window = Window(root, 'Kiesmenu_spelers')
+    # Create frames for top, bottom, and confirm sections
+    frame_entries = window.add_frame(x_pos=Window.width/2, y_pos=240)
+    #Velden toevoegen
+    var = [tk.StringVar() for _ in range(Player.aantal)]
+    for i in range(Player.aantal):
+        window.add_text(f'Speler {i+1}:', frame_entries, 0, i, grid=True)
+        inputfield = tk.Entry(frame_entries, textvariable = var[i], font=('calibre',10,'normal'))
+        window.place_widget(inputfield, 1, i, grid=True)
+        if i == 0:
+            inputfield.focus_force()
+    #Bevestig-knop onderaan
+    window.add_confirm(lambda var=var: submit_name(var), x_pos=Window.width/2, y_pos=400)
+
+def unique(namen:list) -> bool:
+    """Check of de ingevulde namen uniek zijn.
+    
+    :param namen: Lijst met ingevoerde namen.
+    """
+    if not namen:
+        return False
+    unique = []
+    for naam in namen:
+        if len(naam.name)>10:
+            return False
+        if naam.name not in unique and naam.name:
+            unique.append(naam.name)
+    return len(unique) == len(namen)
+
+@print_function_name
+def blinds():
+    """Blind inzet toevoegen bij startspeler(s).
+    
+    :param index: Index van de startspeler in de lijst.    
+    """
+    Player.players[0].add_inzet(50)
+    Player.players[0].blind = 'big'
+    Player.players[1].add_inzet(25)
+    Player.players[1].blind = 'small'
+
+#Window
+def bevestigen(root, functie, speler):
+    window = Window(root, 'Bevestigen')
+    frame_confirm = window.add_frame(x_pos=Window.width/2, y_pos=440)
+
+    img_bg = PhotoImage(Image.open(Card.bg_loc).resize(Card.imagesize))
+    window.images.append(img_bg)
+    # Create a Label Widget to display the text or Image
+    window.add_image(frame_confirm, img_bg, 0, 0)
+    window.add_text(f'Het is nu de beurt van {speler.name}.\nBevestig dat jij deze speler bent.', frame_confirm, 0, 1, grid=True)
+    #Start en stopknoppen
+    window.add_confirm(functie, x_pos=Window.width/2, y_pos=600)
+
+
+def next_starter(inputlist):
+    inputlist = inputlist[1:] + inputlist[:1]
+    return inputlist
+
+
+@print_function_name
+def speelronde(root, tafel, deck, callback):
     """Voer de speelronde uit.
 
     :param spelers: Lijst met alle deelnemende spelers
     :param index: Index van de startspeler in de list 'spelers'
     """
-    #Initieer een deck en lege tafel
-    tafel = Player('Tafel')
-    deck = Player('Deck', True)
-    #Maak spelerhanden klaar voor de volgende ronde
-    for speler in spelers:
-        speler.setup(deck)
-
-    # deck.draw(tafel, 5)
-
     #Blind inzetten voor startspeler(s)
-    blinds(spelers, index)
-    aantal = len(spelers)
-    
-    #Big blind
-    spelers[index].bevestigen()
-    spelerbeurt(spelers[index], spelers, tafel, 'big')
-    index = (index+1)%aantal
-    #Small blind
-    spelers[index].bevestigen()
-    spelerbeurt(spelers[index], spelers, tafel, 'small')
-    index = (index+1)%aantal
+    blinds()
 
+    # deck.draw(tafel,5)
     #Counter om ervoor te zorgen dat iedere speler aan de beurt is geweest voor de volgende kaart wordt toegevoegd
-    counter = 1
-    speler_cycle  = cycle(spelers)
-    for i, speler in enumerate(speler_cycle):
-        if i < index:
-            continue
-        
-        #Break als nog maar 1 actieve speler
-        if sum(1 for speler in spelers if not speler.fold) == 1:
-            break
+    counter = 0
+    speler_cycle = cycle(Player.players)
 
-        #Spelerbeurt als deze niet gefold heeft
+    @print_function_name
+    def next_turn():
+        nonlocal counter
+        speler = next(speler_cycle)
         if not speler.fold:
-            speler.bevestigen()
-            spelerbeurt(speler, spelers, tafel)
+            bevestigen(root, lambda: beurt_scherm(root, speler, tafel, na_beurt), speler)
+
+    def na_beurt(speler):
+        nonlocal counter
+        speler.blind = ''
         counter +=1
         #Als iedere speler evenveel heeft ingezet en minstens 1 keer aan de beurt is geweest word de volgende kaart toegevoegd
-        if gelijke_inzet(spelers) and counter >= aantal:
+        if gelijke_inzet() and counter >= Player.aantal:
             if tafel.size == 0:
                 trek = 3
             elif tafel.size == 5:
-                break
+                callback(tafel)
+                return
             else:
                 trek = 1
             deck.draw(tafel, trek)
             counter = 0
+        next_turn()
 
-    wincheck(spelers, tafel)
-    tussenstand(spelers, tafel)
+    next_turn()
+
+@print_function_name
+def beurt_scherm(root, speler, tafel, callback):
+    """Beurt van een speler uitvoeren
+    
+    :param speler: Speler die aan de beurt is.
+    :param spelers: Lijst met alle spelers voor de weergave van de inzet.
+    :param tafel: Collectie met kaarten die op tafel liggen
+    :param blind: Optionele waarde voor de grote of kleine blind.
+    """
+    def aanpassen(aantal, max, knop):
+        nonlocal inzet_num
+        lbl_value["text"] += aantal
+        if lbl_value["text"] <= 0:
+            lbl_value["text"] = 0
+            knop["text"] = "Call"
+        if lbl_value["text"] > 0:
+            knop["text"] = "Verhogen"
+        if lbl_value["text"] >= max:
+            lbl_value["text"] = max
+            knop["text"] = "All-in"
+        inzet_num = lbl_value['text']
+
+    def inzetten(speler):
+        nonlocal inzet_num
+        max_inzet = max(Player.players, key=lambda speler: speler.inzet).inzet
+        inzet_temp = max_inzet - speler.inzet + inzet_num
+        speler.add_inzet(inzet_temp)
+        callback(speler)
+        
+    def fold(speler):
+        speler.fold = True
+        callback(speler)
+        
+    inzet_num = 0
+        #Initialiseer window
+    window = Window(root, 'Spelerbeurt')
+    #Handkaarten van de speler weergeven
+    window.add_cards(speler, 'Handkaarten:', x_pos=950, y_pos=800)
+    #Tafel weergeven
+    window.add_card_canvas(tafel, x_pos=950, y_pos=350)
+    #Inzet-tussenstand weergeven
+    window.add_inzet(Player.players)
+    if speler.blind:
+        window.add_text(f'Je bent de {speler.blind} blind', x_pos=950, y_pos=650, font=('calibri',15,'normal'))
+
+    #Call/Raise knop
+    call_button = window.add_button(window.window, "Call", 1650, 900, lambda: inzetten(speler))
+    #Fold
+    window.add_button(window.window, "Fold", 1750, 900, lambda: fold(speler))
+    
+    if not speler.blind == 'big':
+        #Inzet-knoppen toevoegen
+        frame_inzet = window.add_frame(x_pos=1700, y_pos=750, bg="red")
+        # frame_inzet["bg"] = "red"
+
+        button_100 = tk.Button(master=frame_inzet, text="+100", fg='green', command= lambda aantal=100, max=speler.geld, knop=call_button: aanpassen(aantal, max, knop))
+        window.place_button(button_100, 0, 0, True)
+        button_10 = tk.Button(master=frame_inzet, text="+10", fg='green', command= lambda aantal=10, max=speler.geld, knop=call_button: aanpassen(aantal, max, knop))
+        window.place_button(button_10, 0, 1, True)
+        button_1 = tk.Button(master=frame_inzet, text="+1", fg='green', command= lambda aantal=1, max=speler.geld, knop=call_button: aanpassen(aantal, max, knop))
+        window.place_button(button_1, 0, 2, True)
+        lbl_value = tk.Label(master=frame_inzet, text=0, font=('calibre', 15, 'bold'), borderwidth=5, relief=tk.RIDGE, width=10, height=2)
+        lbl_value.grid(row=3, column=0)
+        button_n1 = tk.Button(master=frame_inzet, text="-1", fg='red', command= lambda aantal=-1, max=speler.geld, knop=call_button: aanpassen(aantal, max, knop))
+        window.place_button(button_n1, 0, 4, True)
+        button_n10 = tk.Button(master=frame_inzet, text="-10", fg='red', command= lambda aantal=-10, max=speler.geld, knop=call_button: aanpassen(aantal, max, knop))
+        window.place_button(button_n10, 0, 5, True)
+        button_n100 = tk.Button(master=frame_inzet, text="-100", fg='red', command= lambda aantal=-100, max=speler.geld, knop=call_button: aanpassen(aantal, max, knop))
+        window.place_button(button_n100, 0, 6, True)
+
+    #Je kan op enter drukken om te callen/verhogen
+    window.window.bind('<Return>', lambda event, speler=speler: inzetten(speler))
+
+@print_function_name
+def gelijke_inzet() -> bool:
+    """Check of elke speler die nog meedoet gelijke inzet heeft.
+    """
+    max_inzet = max(Player.players, key=lambda speler: speler.inzet).inzet
+    for speler in Player.players:
+        if speler.inzet != max_inzet and not speler.fold and not speler.geld == 0:
+            return False
+    return True
+
+@print_function_name
+def spel_spelen(root):
+
+    def next_round():
+        #Initieer een deck en lege tafel
+        tafel = Player('Tafel')
+        deck = Player('Deck', True)
+        #Maak spelerhanden klaar voor de volgende ronde
+        for speler in Player.players:
+            speler.setup(deck)
+
+        speelronde(root, tafel, deck, na_speelronde)
+        
+    def na_speelronde(tafel):
+        rondewinnaar(tafel)
+        ronde_uitslag(root, tafel, ronde_afhandelen)
+
+    #Check voor winnaar
+    def check_winner():
+        Player.losers += [speler for speler in Player.players if speler.geld == 0]
+        Player.players = [speler for speler in Player.players if speler.geld != 0]
+        return len(Player.players) <= 1
+
+    def ronde_afhandelen():
+        print('voor', Player.players)
+        Player.players = next_starter(Player.players)
+        print('na', Player.players)
+        if check_winner():
+            tussenstand(root, lambda: menu("\nWil je nog een potje spelen?", "Opnieuw", root))
+            return
+        #Tussenstand weergeven tussen rondes
+        tussenstand(root, next_round)
+
+    next_round()
 
 
-def tussenstand(spelers:list, tafel):
+@print_function_name
+def rondewinnaar(tafel):
+    """
+    Bepaal handen van alle spelers, en daarmee de winnaar van de ronde.
+
+    :param spelers: Lijst met spelers.
+    :type spelers: list
+    :param tafel: Tafelkaarten
+    :type tafel: Player()
+    """
+    for speler in Player.players:
+        speler.rondekaarten, speler.rondescore, speler.rondehand = hand_bepalen(speler, tafel)
+        print(speler, speler.rondekaarten, speler.rondescore, speler.inzet, speler.geld)
+        print("-"*50)
+
+    winnaars = [speler for speler in Player.players if speler.fold == False]
+    while winnaars:
+        winnaar = max(winnaars, key=lambda speler: speler.rondescore)
+
+        winnaar_inzet = winnaar.inzet
+        for speler in Player.players:
+            if winnaar_inzet < speler.inzet:
+                winst = winnaar_inzet
+            else:
+                winst = speler.inzet
+            winnaar.geld += winst
+            winnaar.rondewinst += winst
+            speler.inzet -= winnaar_inzet
+            if speler.inzet < 0:
+                speler.inzet = 0
+
+        #Winnaar uit de lijst verwijderd.
+        for index, speler in enumerate(winnaars):
+            if speler.name == winnaar.name:
+                winnaars.pop(index)
+                break
+
+#window
+@print_function_name
+def tussenstand(root, callback):
+    winner = False
+    window = Window(root, 'Tussenstand')
+    # frame_score = window.add_frame(x_pos=Window.width/2, y_pos=300)
+    img_bg = PhotoImage(Image.open(Card.bg_loc).resize(Card.imagesize))
+    window.images.append(img_bg)
+    # Create a Label Widget to display the text or Image
+    window.add_image(window.window, img_bg, x_pos=Window.width/2, y_pos=300, grid=False)
+
+    def sort_order(input):
+        """Sorteer volgorde van de kaarten vaststellen."""
+        return input.rondescore
+    spelers = [speler for speler in Player.players]
+    spelers.sort(key=sort_order, reverse=True)
+
+    if len(Player.players) == 1:
+        window.add_text(f'Gefeliciteerd {Player.players[0].name}, jij bent winnaartjeman!!\nBedankt voor het spelen!', x_pos=Window.width/2, y_pos=450)
+        winner = True
+    #Tekst toevoegen
+    if Player.players:
+        frame_standing = window.add_frame(x_pos=Window.width/2,y_pos=550)
+        window.add_text(f"{'Eindstand:' if winner else 'Tussenstand:'}", frame_standing, 0, 0, grid=True, columnspan=2)
+        for id_, speler in enumerate(spelers, 1):
+            window.add_text(f'{speler.name}', frame_standing, 0, id_, grid=True)
+            window.add_text(f'{speler.geld}', frame_standing, 1, id_, grid=True)
+    else:
+        window.add_text('Helaas, er zijn geen winnaars.\nBedankt voor het spelen!', x_pos=Window.width/2, y_pos=150)
+
+    if Player.losers:
+        frame_losers = window.add_frame(x_pos=Window.width/2, y_pos=680)
+        window.add_text(f"Helaas, {'jullie zijn' if len(Player.losers) > 1 else 'je bent'} uitgeschakeld", frame_losers, 0, 0, grid=True, columnspan=2)
+        for id_, speler in enumerate(Player.losers,1):
+            window.add_text(f'{speler.name}', frame_losers, 0, id_, grid=True)
+            window.add_text(f'{speler.geld}', frame_losers, 1, id_, grid=True)
+    
+    #Start en stopknoppen
+    window.add_confirm(callback, Window.width/2, 800)
+
+
+#Window
+@print_function_name
+def ronde_uitslag(root, tafel, callback):
     """
     Laat de tussenstand zien na het einde van de ronde.
 
@@ -427,73 +498,79 @@ def tussenstand(spelers:list, tafel):
         return input.rondescore
 
     #Initialiseer window
-    window = Window('Tussenstand')
-    window.add_frame(window.frame_top, 350, 430)
-    window.frame_top["bg"] = "black"
-    window.frame_top["bd"] = 0
+    window = Window(root,'Tussenstand')
+    frame_top =  window.add_frame(x_pos=350, y_pos=430, bg='black', bd=0)
+    # window.add_frame(window.frame_top, 350, 430)
+    # window.frame_top["bg"] = "black"
+    # window.frame_top["bd"] = 0
 
-    windows = [window.frame1_t, window.frame2_t, window.frame3_t, window.frame4_t]
+    # windows = [window.frame1_t, window.frame2_t, window.frame3_t, window.frame4_t]
 
-    winnaars = [speler for speler in spelers if speler.fold == False]
+    winnaars = [speler for speler in Player.players if speler.fold == False]
     winnaars.sort(key=sort_order, reverse=True)
+
     #Handkaarten van de spelers weergeven die niet hadden gefold.
-    window.add_label('-', window.frame_top, x_pos=0, y_pos=0, grid=True, font=('calibre',10,'bold'), fg=Window.bg_color)
-    window.add_label('Handtype', window.frame_top, x_pos=1, y_pos=0, grid=True, font=('calibre',10,'bold'), padx=(0,1), width=12)
-    window.add_label('Winst', window.frame_top, x_pos=2, y_pos=0, grid=True, font=('calibre',10,'bold'), padx=(0,1), width=12)
-    window.add_label('Huidige\nmonies', window.frame_top, x_pos=3, y_pos=0, grid=True, font=('calibre',10,'bold'), width=12)
+    window.add_text('-', frame_top, x_pos=0, y_pos=0, grid=True, font=('calibre',10,'bold'), fg=Window.bg_color)
+    window.add_text('Handtype', frame_top, x_pos=1, y_pos=0, grid=True, font=('calibre',10,'bold'), padx=(0,1), width=12)
+    window.add_text('Winst', frame_top, x_pos=2, y_pos=0, grid=True, font=('calibre',10,'bold'), padx=(0,1), width=12)
+    window.add_text('Huidige\nmonies', frame_top, x_pos=3, y_pos=0, grid=True, font=('calibre',10,'bold'), width=12)
     for i, speler in enumerate(winnaars):
-        window.add_cards(speler, windows[i], f'{speler.name}', 0, i+1, grid=True)
-        window.add_label(f"{speler.rondehand}", window.frame_top, x_pos=1, y_pos=i+1, grid=True, font=('calibre',10,'bold'), padx=(0,1), pady=(1,0))
-        window.add_label(f"{speler.rondewinst}", window.frame_top, x_pos=2, y_pos=i+1, grid=True, font=('calibre',10,'bold'), padx=(0,1), pady=(1,0))
-        window.add_label(f"{speler.geld}", window.frame_top, x_pos=3, y_pos=i+1, grid=True, font=('calibre',10,'bold'), pady=(1,0))
+        window.add_cards(speler, f'{speler.name}', frame_top, x_pos=0, y_pos=i+1, grid=True)
+        # window.add_cards(speler, windows[i], f'{speler.name}', 0, i+1, grid=True)
+        window.add_text(f"{speler.rondehand}", frame_top, x_pos=1, y_pos=i+1, grid=True, font=('calibre',10,'bold'), padx=(0,1), pady=(1,0))
+        window.add_text(f"{speler.rondewinst}", frame_top, x_pos=2, y_pos=i+1, grid=True, font=('calibre',10,'bold'), padx=(0,1), pady=(1,0))
+        window.add_text(f"{speler.geld}", frame_top, x_pos=3, y_pos=i+1, grid=True, font=('calibre',10,'bold'), pady=(1,0))
 
     window.add_card_canvas(tafel, 'Tafelkaarten:', 1300, 450)
 
     #Start en stopknoppen
-    window.add_confirm(window.close, 950, 900)  
-    window.run()
-
-
-def speleinde(tekst):
-    window = Window('Uitgeschakeld')
-    window.add_label(tekst, x_pos=950, y_pos=450, font=('calibri',15,'bold'))
-    window.add_confirm(window.close, 950, 650) 
-    window.run()
+    window.add_confirm(callback, 950, 900)  
 
 
 
-def main(): 
-    """Mainfunctie die het script draait."""
+#Window
+def menu(tekst:str, knoptekst:str, root:Tk):
+    # Create an instance of tkinter window
+    window = Window(root,'Start')
+    #Plaatjes toevoegen
+    frame_menu = window.add_frame(x_pos=Window.width/2, y_pos=450)
+    img_bg = PhotoImage(Image.open(Card.bg_loc).resize(Card.imagesize))
+    window.images.append(img_bg)
+    # Create a Label Widget to display the text or Image
+    window.add_image(frame_menu, img_bg, 0,0, grid=True)
+    window.add_text(tekst, frame_menu, 0, 1, grid=True)
+    #Start en stopknoppen
+    window.add_button(window.window, knoptekst, Window.width/2, 600, lambda: kiesmenu_aantal(root))
+    window.add_button(window.window, "Instructies", Window.width/2, 650, lambda: instructies(root))
+    window.add_button(window.window, "Sluit spel", Window.width/2, 700, exit)
 
-    startmenu()
+#Window
+def instructies(root:Tk):
+    window = Window(root,'Instructies')
+    #Tekst om op het scherm te plaatsen
+    instructietekst = "Klik op de kaarten om deze te spelen,\ntoep als je denkt te kunnen winnen."
+    #Tekst toevoegen
+    window.add_text(instructietekst, x_pos=Window.width/2, y_pos=400)
+    #Knop toevoegen die terug gaat naar het hoofdmenu
+    window.add_button(window.window, "Terug", x_pos=Window.width/2, y_pos=650, functie=lambda: menu("\nWil je een potje spelen?", "Start", root))
 
-    #Bepaal aantal spelers
-    num_players = kiesmenu(tekst='spelers (2-4)')
-    #Input voor spelernamen
-    spelers = []
-    error_msg = ''
-    while not unique(spelers):
-        spelers = kiesmenu(aantal=num_players, bericht=error_msg)
-        error_msg = 'Er mogen geen dubbele namen of lege velden zijn.'
 
-    indices = cycle(range(num_players))
-    #Testgegevens
-    # spelers = [Player('oli1'), Player('oli2'), Player('oli3')]
-    for start_index in indices:
+#Root
+def main():
+    root = Tk()
+    root.title('Toepen')
+    root.geometry(f'{Window.width}x{Window.height}+0+0')
+    root.resizable(width=False, height=False)
+    # root.minsize(Window.width,Window.height)
+    # root.maxsize(Window.width,Window.height)    
+    root.configure(background=Window.bg_color)
 
-        speelronde(spelers, start_index)
+    Player.aantal=3
+    Player.players = [Player('oli1'), Player('oli2'), Player('oli3')]
+    spel_spelen(root)
 
-        #Check voor de winnaar en of uitschakeling.
-        spelers_temp = []
-        for speler in spelers:
-            if speler.geld != 0:
-                spelers_temp.append(speler)
-            else:
-                speleinde(f"Helaas {speler.name}, je monies zijn op.\n\nJe kan nu niet meer mee spelen!")
-        spelers = spelers_temp
-        if len(spelers) == 1:
-            speleinde(f'Gefeliciteerd {spelers[0].name}, jij bent winnaartjeman!!')
-            break
+    # menu("\nWil je een potje spelen?", "Start", root=root)
+    root.mainloop()
 
 
 if __name__ == '__main__':

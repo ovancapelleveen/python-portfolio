@@ -1,0 +1,82 @@
+from flask import Flask, render_template, request, redirect, url_for
+import subprocess
+import os
+import git
+
+app = Flask(__name__)
+
+GITHUB_USERNAME = "ovancapelleveen"
+ACCESS_TOKEN = os.getenv("GH_TOKEN")  # store this securely!
+REPO_URL = f"https://{GITHUB_USERNAME}:{ACCESS_TOKEN}@github.com/{GITHUB_USERNAME}/python-portfolio.git"
+LOCAL_REPO_PATH = "repo"
+OUTPUT_FOLDER = "outputs"
+STATIC_IMG_PATH = os.path.join("static", "images")
+
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+os.makedirs(STATIC_IMG_PATH, exist_ok=True)
+
+# Clone or pull GitHub repo
+if os.path.exists(LOCAL_REPO_PATH):
+    repo = git.Repo(LOCAL_REPO_PATH)
+    repo.remotes.origin.pull()
+else:
+    git.Repo.clone_from(REPO_URL, LOCAL_REPO_PATH)
+
+
+@app.route('/')
+def index():
+    projects = []
+    projects_dir = os.path.join(LOCAL_REPO_PATH, "projects")
+    
+    for folder in os.listdir(projects_dir):
+        proj_path = os.path.join(projects_dir, folder)
+        script_path = os.path.join(proj_path, "main.py")
+        output_path = os.path.join(OUTPUT_FOLDER, f"{folder}.txt")
+        # image_path = os.path.join(STATIC_IMG_PATH, f"{folder}_preview.png")
+
+        if os.path.isfile(script_path):
+            code = open(script_path).read()
+            output = open(output_path).read() if os.path.exists(
+                output_path) else "Not run yet"
+            # has_image = os.path.exists(image_path)
+            projects.append({
+                "name": folder,
+                "code": code,
+                "output": output,
+                # "has_image": has_image
+            })
+
+    return render_template("index.html", projects=projects)
+
+
+@app.route('/run/<project_name>')
+def run_script(project_name):
+
+    project_path = os.path.join(LOCAL_REPO_PATH, "projects", project_name)
+    # script_path = os.path.join(project_path, "main.py")
+    output_path = os.path.join(OUTPUT_FOLDER, f"{project_name}.txt")
+
+    try:
+        result = subprocess.run(["python3", "main.py"],
+                                capture_output=True,
+                                text=True,
+                                cwd=project_path)
+        output = result.stdout + result.stderr
+        with open(output_path, "w") as f:
+            f.write(output)
+
+        # Copy preview image (if generated)
+        preview_path = os.path.join(project_path, "preview.png")
+        if os.path.exists(preview_path):
+            dest = os.path.join(STATIC_IMG_PATH, f"{project_name}_preview.png")
+            with open(preview_path, "rb") as src, open(dest, "wb") as dst:
+                dst.write(src.read())
+
+    except Exception as e:
+        with open(output_path, "w") as f:
+            f.write(f"Error: {str(e)}")
+
+    return redirect(url_for('index'))
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=3000)
