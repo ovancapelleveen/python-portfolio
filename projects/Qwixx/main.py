@@ -1,6 +1,7 @@
 import re
 import tkinter as tk
-from tkinter import Button, Label, Frame, Tk
+from tkinter import Tk, Button, Frame, Label
+# import tkinter.ttk as ttk
 
 import os
 from PIL import Image #, ImageTk
@@ -35,10 +36,14 @@ class Window():
             widget.destroy()        
 
     def add_frame(self, master=None, x_pos=None, y_pos=None, grid=False, anchor_=tk.CENTER, relief=tk.FLAT, **kwargs):
+        # Initialize style
+        # s = Style()
+        # s.configure('TFrame', background=Window.bg_color)
+        
         """Frame toevoegen aan het scherm."""
         if not master:
             master = self.window
-        frame = Frame(master, relief=relief, bd=1, bg=Window.bg_color) # type: ignore
+        frame = Frame(master, relief=relief, bd=1, bg=Window.bg_color) # type: ignore  , style='TFrame')
         self.place_widget(frame, x_pos, y_pos, grid, anchor_, **kwargs)
         return frame
     
@@ -48,9 +53,9 @@ class Window():
         pady = None if 'pady' not in kwargs else kwargs['pady']
         columnspan = None if 'columnspan' not in kwargs else kwargs['columnspan']
         if grid:
-            frame.grid(column=x_pos, row=y_pos, sticky="nsew",padx=padx, pady=pady, columnspan=columnspan)
+            frame.grid(column=x_pos, row=y_pos, sticky="nsew", padx=padx, pady=pady, columnspan=columnspan)
         elif x_pos and y_pos:
-            frame.place(x=x_pos, y=y_pos, anchor=anchor_,padx=padx, pady=pady)
+            frame.place(x=x_pos, y=y_pos, anchor=anchor_, padx=padx, pady=pady)
         else:
             frame.pack(padx=padx, pady=pady)
     
@@ -81,7 +86,7 @@ class Window():
 
     #Vakjes op kaart aanbrengen
     def add_box(self, frame, value, color, x_pos, y_pos):
-        Button(master = frame, text = value, fg = 'white', bg = color, borderwidth=1,relief="raised", width=4, height=1, font = ('calibri', 25)).grid(column=x_pos, row=y_pos, padx=2, pady=2)
+        Button(master = frame, text = value, fg = 'white', bg = color, borderwidth=1, relief="raised", width=4, height=1, font = ('calibri', 25)).grid(column=x_pos, row=y_pos, padx=2, pady=2)
     #Toegestane vakjes op kaart aanbrengen
     def add_button_box(self, frame, value, color, functie, x_pos, y_pos):
         Button(master = frame, text = value, fg = 'white', bg = color, borderwidth=1, relief="raised", width=4, height=1, font = ('calibri', 25), command=functie).grid(column=x_pos, row=y_pos, padx=2, pady=2)
@@ -96,7 +101,7 @@ class Window():
             bg='white'
         else:
             bg=Window.bg_color
-        Label(master = frame, image = img, bg=bg).grid(column=x_pos, row=1, padx=3, pady=2)
+        Label(master = frame, image = img, background=bg).grid(column=x_pos, row=1, padx=3, pady=2) #bg=bg
 
     #Tekst-bericht toevoegen
     def add_text(self, text, frame=None, x_pos=None, y_pos=None, **kwargs):
@@ -104,7 +109,7 @@ class Window():
         if text:
             if not frame:
                 frame = self.window
-            label = Label(master=frame, text=text, bg=Window.bg_color, fg=Window.fg_color, font=('calibre',10,'bold'))
+            label = Label(master=frame, text=text, background=Window.bg_color, foreground=Window.fg_color, font=('calibre',10,'bold'))
             for key, value in kwargs.items():
                 try:
                     label[key] = value
@@ -114,7 +119,7 @@ class Window():
 
     def add_image(self, frame, image_, x_pos, y_pos, grid=True, **kwargs):
         """Afbeelding toevoegen aan het frame."""
-        image = Label(master=frame, image=image_, bg=Window.bg_color)
+        image = Label(master=frame, image=image_, background=Window.bg_color)
         self.place_widget(image, x_pos, y_pos, grid, **kwargs)
 
     def add_button(self, frame, tekst, x_pos, y_pos, functie, width=13, height=2, grid=False):
@@ -133,7 +138,7 @@ class Window():
         frame_failed = self.add_frame(x_pos=x_pos, y_pos=y_pos)
         self.add_text('Mislukte worpen:', frame_failed, x_pos=0, y_pos=0, grid=True, columnspan=4)
         for i in range(4):
-            Label(master = frame_failed, text = f'{kaart.failed[i]}', bg = 'white', borderwidth=1, relief="solid", width=2, height=1, font = ('calibri', 25)).grid(row = 1, column=i)
+            Label(master = frame_failed, text = f'{kaart.failed[i]}', background = 'white', borderwidth=1, relief="solid", width=2, height=1, font = ('calibri', 25)).grid(row = 1, column=i)
 ####################################################
 
 class Dice():
@@ -277,12 +282,12 @@ def kiesmenu_aantal(root, random = False, lowerbound=2, upperbound=4):
         if lowerbound <= Scorekaart.aantal <= upperbound:
             kiesmenu_spelers(root, random)
         else:
-            window.add_text('Dat aantal is niet toegestaan!', x_pos=Window.width/2, y_pos=140)
+            window.add_text('Dat aantal is niet toegestaan!', x_pos=Window.width*0.5, y_pos=140)
 
     #Window initieren
     window = Window(root, 'Kiesmenu_aantal')
     # Create frames for top, bottom, and confirm sections
-    frame_entries = window.add_frame(x_pos=Window.width/2, y_pos=240)
+    frame_entries = window.add_frame(x_pos=Window.width*0.5, y_pos=240)
     #Velden toevoegen
     var=tk.IntVar()
     var.set(lowerbound)
@@ -291,7 +296,7 @@ def kiesmenu_aantal(root, random = False, lowerbound=2, upperbound=4):
     window.place_widget(inputfield, 1, 0, grid=True)
     inputfield.focus_force()
     #Bevestig-knop onderaan
-    window.add_confirm(lambda: submit_num(var), x_pos=Window.width/2, y_pos=400)
+    window.add_confirm(lambda: submit_num(var), x_pos=Window.width*0.5, y_pos=400)
 
 #Window
 def kiesmenu_spelers(root, random = False):
@@ -303,11 +308,11 @@ def kiesmenu_spelers(root, random = False):
         if unique(Scorekaart.players):
             spel_spelen(root)
         else:
-            window.add_text('Er mogen geen dubbele namen of lege velden zijn!', x_pos=Window.width/2, y_pos=140)
+            window.add_text('Er mogen geen dubbele namen of lege velden zijn!', x_pos=Window.width*0.5, y_pos=140)
     #Window initieren
     window = Window(root, 'Kiesmenu_spelers')
     # Create frames for top, bottom, and confirm sections
-    frame_entries = window.add_frame(x_pos=Window.width/2, y_pos=240)
+    frame_entries = window.add_frame(x_pos=Window.width*0.5, y_pos=240)
     #Velden toevoegen
     var = [tk.StringVar() for _ in range(Scorekaart.aantal)]
     for i in range(Scorekaart.aantal):
@@ -317,7 +322,7 @@ def kiesmenu_spelers(root, random = False):
         if i == 0:
             inputfield.focus_force()
     #Bevestig-knop onderaan
-    window.add_confirm(lambda var=var: submit_name(var), x_pos=Window.width/2, y_pos=400)
+    window.add_confirm(lambda var=var: submit_name(var), x_pos=Window.width*0.5, y_pos=400)
 
 
 def unique(namen):
@@ -343,14 +348,14 @@ def start_beurt(root, dice, vervolg_beurt):
         vervolg_beurt()
 
     window = Window(root, 'Beurt')
-    frame_text = window.add_frame(x_pos=Window.width/2, y_pos=150)
+    frame_text = window.add_frame(x_pos=Window.width*0.5, y_pos=150)
     #Afbeelding plaatsen
     img_bg = PhotoImage(Image.open(Window.bg_loc).resize(Window.imagesize))
     window.images.append(img_bg)
     window.add_image(frame_text, img_bg, 0, 0)
     window.add_text(f"Het is nu de beurt aan {Scorekaart.players[0].player}", frame_text, 0, 1, grid=True)
     #Bevestig knop
-    window.add_confirm(functie=dobbelen, tekst="Gooi dobbelstenen!", x_pos=Window.width/2, y_pos=350, width=15)
+    window.add_confirm(functie=dobbelen, tekst="Gooi dobbelstenen!", x_pos=Window.width*0.5, y_pos=350, width=15)
 
 
 def spel_spelen(root):
@@ -539,17 +544,18 @@ def menu(tekst:str, knoptekst:str, root:Tk):
     # Create an instance of tkinter window
     window = Window(root,'Start')
     #Plaatjes toevoegen
-    frame_menu = window.add_frame(x_pos=Window.width/2, y_pos=150)
+    frame_menu = window.add_frame(x_pos=Window.width*0.5, y_pos=150)
     img_bg = PhotoImage(Image.open(Window.bg_loc).resize(Window.imagesize))
     window.images.append(img_bg)
     # Create a Label Widget to display the text or Image
     window.add_image(frame_menu, img_bg, 0,0, grid=True)
     window.add_text(tekst, frame_menu, 0, 1, grid=True)
     #Start en stopknoppen
-    window.add_button(window.window, knoptekst, Window.width/2, 300, lambda: kiesmenu_aantal(root))
-    window.add_button(window.window, "Variant", Window.width/2, 350, lambda: kiesmenu_aantal(root, True))
-    window.add_button(window.window, "Instructies", Window.width/2, 400, lambda: instructies(root))
-    window.add_button(window.window, "Sluit spel", Window.width/2, 450, exit)
+    window.add_button(window.window, knoptekst, Window.width*0.5, 300, lambda: kiesmenu_aantal(root))
+    window.add_button(window.window, "Variant", Window.width*0.5, 350, lambda: kiesmenu_aantal(root, True))
+    window.add_button(window.window, "Instructies", Window.width*0.5, 400, lambda: instructies(root))
+    window.add_button(window.window, "Sluit spel", Window.width*0.5, 450, exit)
+
 
 #Window
 def instructies(root:Tk):
@@ -557,9 +563,9 @@ def instructies(root:Tk):
     #Tekst om op het scherm te plaatsen
     instructietekst = "Klik op de kaarten om deze te spelen,\ntoep als je denkt te kunnen winnen."
     #Tekst toevoegen
-    window.add_text(instructietekst, x_pos=Window.width/2, y_pos=250)
+    window.add_text(instructietekst, x_pos=Window.width*0.5, y_pos=250)
     #Knop toevoegen die terug gaat naar het hoofdmenu
-    window.add_button(window.window, "Terug", x_pos=Window.width/2, y_pos=400, functie=lambda: menu("\nWil je een potje spelen?", "Start", root))
+    window.add_button(window.window, "Terug", x_pos=Window.width*0.5, y_pos=400, functie=lambda: menu("\nWil je een potje spelen?", "Start", root))
 
 #Root
 def main():
@@ -572,6 +578,10 @@ def main():
     root.configure(background=Window.bg_color)
     menu("\nWil je een potje spelen?", "Start", root=root)
     root.mainloop()
+
+
+
+
 
 if __name__ == '__main__':
     main()
