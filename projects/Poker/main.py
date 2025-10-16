@@ -147,12 +147,12 @@ def kiesmenu_aantal(root, lowerbound=2, upperbound=4):
         if lowerbound <= Player.aantal <= upperbound:
             kiesmenu_spelers(root)
         else:
-            window.add_text('Dat aantal is niet toegestaan!', x_pos=Window.width/2, y_pos=140)
+            window.add_text('Dat aantal is niet toegestaan!', x_pos=Window.width*0.5, y_pos=Window.height*0.14)
 
     #Window initieren
     window = Window(root, 'Kiesmenu_aantal')
     # Create frames for top, bottom, and confirm sections
-    frame_entries = window.add_frame(x_pos=Window.width/2, y_pos=240)
+    frame_entries = window.add_frame(x_pos=Window.width*0.5, y_pos=Window.height*0.24)
     #Velden toevoegen
     var=tk.IntVar()
     var.set(lowerbound)
@@ -161,7 +161,7 @@ def kiesmenu_aantal(root, lowerbound=2, upperbound=4):
     window.place_widget(inputfield, 1, 0, grid=True)
     inputfield.focus_force()
     #Bevestig-knop onderaan
-    window.add_confirm(lambda: submit_num(var), x_pos=Window.width/2, y_pos=400)
+    window.add_confirm(lambda: submit_num(var), x_pos=Window.width*0.5, y_pos=Window.height*0.4)
 
 #Window
 @print_function_name
@@ -174,11 +174,11 @@ def kiesmenu_spelers(root):
         if unique(Player.players):
             spel_spelen(root)
         else:
-            window.add_text('Er mogen geen dubbele namen of lege velden zijn!', x_pos=Window.width/2, y_pos=140)
+            window.add_text('Er mogen geen dubbele namen of lege velden zijn!', x_pos=Window.width*0.5, y_pos=Window.height*0.14)
     #Window initieren
     window = Window(root, 'Kiesmenu_spelers')
     # Create frames for top, bottom, and confirm sections
-    frame_entries = window.add_frame(x_pos=Window.width/2, y_pos=240)
+    frame_entries = window.add_frame(x_pos=Window.width*0.5, y_pos=Window.height*0.24)
     #Velden toevoegen
     var = [tk.StringVar() for _ in range(Player.aantal)]
     for i in range(Player.aantal):
@@ -188,7 +188,7 @@ def kiesmenu_spelers(root):
         if i == 0:
             inputfield.focus_force()
     #Bevestig-knop onderaan
-    window.add_confirm(lambda var=var: submit_name(var), x_pos=Window.width/2, y_pos=400)
+    window.add_confirm(lambda var=var: submit_name(var), x_pos=Window.width*0.5, y_pos=Window.height*0.4)
 
 def unique(namen:list) -> bool:
     """Check of de ingevulde namen uniek zijn.
@@ -219,7 +219,7 @@ def blinds():
 #Window
 def bevestigen(root, functie, speler):
     window = Window(root, 'Bevestigen')
-    frame_confirm = window.add_frame(x_pos=Window.width/2, y_pos=440)
+    frame_confirm = window.add_frame(x_pos=Window.width*0.5, y_pos=Window.height*0.44)
 
     img_bg = PhotoImage(Image.open(Card.bg_loc).resize(Card.imagesize))
     window.images.append(img_bg)
@@ -227,7 +227,7 @@ def bevestigen(root, functie, speler):
     window.add_image(frame_confirm, img_bg, 0, 0)
     window.add_text(f'Het is nu de beurt van {speler.name}.\nBevestig dat jij deze speler bent.', frame_confirm, 0, 1, grid=True)
     #Start en stopknoppen
-    window.add_confirm(functie, x_pos=Window.width/2, y_pos=600)
+    window.add_confirm(functie, x_pos=Window.width*0.5, y_pos=Window.height*0.6)
 
 
 def next_starter(inputlist):
@@ -313,22 +313,22 @@ def beurt_scherm(root, speler, tafel, callback):
         #Initialiseer window
     window = Window(root, 'Spelerbeurt')
     #Handkaarten van de speler weergeven
-    window.add_cards(speler, 'Handkaarten:', x_pos=950, y_pos=800)
+    window.add_cards(speler, 'Handkaarten:', x_pos=Window.width*0.5, y_pos=Window.height*0.8)
     #Tafel weergeven
-    window.add_card_canvas(tafel, x_pos=950, y_pos=350)
+    window.add_card_canvas(tafel, x_pos=Window.width*0.5, y_pos=Window.height*0.35)
     #Inzet-tussenstand weergeven
     window.add_inzet(Player.players)
     if speler.blind:
-        window.add_text(f'Je bent de {speler.blind} blind', x_pos=950, y_pos=650, font=('calibri',15,'normal'))
+        window.add_text(f'Je bent de {speler.blind} blind', x_pos=Window.width*0.5, y_pos=Window.height*0.65, font=('calibri',15,'normal'))
 
     #Call/Raise knop
-    call_button = window.add_button(window.window, "Call", 1650, 900, lambda: inzetten(speler))
+    call_button = window.add_button(window.window, "Call", Window.width*0.87, Window.height*0.9, lambda: inzetten(speler))
     #Fold
-    window.add_button(window.window, "Fold", 1750, 900, lambda: fold(speler))
+    window.add_button(window.window, "Fold", Window.width*0.92, Window.height*0.9, lambda: fold(speler))
     
     if not speler.blind == 'big':
         #Inzet-knoppen toevoegen
-        frame_inzet = window.add_frame(x_pos=1700, y_pos=750, bg="red")
+        frame_inzet = window.add_frame(x_pos=Window.width*0.89, y_pos=Window.height*0.75, bg="red")
         # frame_inzet["bg"] = "red"
 
         button_100 = tk.Button(master=frame_inzet, text="+100", fg='green', command= lambda aantal=100, max=speler.geld, knop=call_button: aanpassen(aantal, max, knop))
@@ -438,11 +438,11 @@ def rondewinnaar(tafel):
 def tussenstand(root, callback):
     winner = False
     window = Window(root, 'Tussenstand')
-    # frame_score = window.add_frame(x_pos=Window.width/2, y_pos=300)
+    # frame_score = window.add_frame(x_pos=Window.width*0.5, y_pos=300)
     img_bg = PhotoImage(Image.open(Card.bg_loc).resize(Card.imagesize))
     window.images.append(img_bg)
     # Create a Label Widget to display the text or Image
-    window.add_image(window.window, img_bg, x_pos=Window.width/2, y_pos=300, grid=False)
+    window.add_image(window.window, img_bg, x_pos=Window.width*0.5, y_pos=Window.height*0.3, grid=False)
 
     def sort_order(input):
         """Sorteer volgorde van de kaarten vaststellen."""
@@ -451,27 +451,27 @@ def tussenstand(root, callback):
     spelers.sort(key=sort_order, reverse=True)
 
     if len(Player.players) == 1:
-        window.add_text(f'Gefeliciteerd {Player.players[0].name}, jij bent winnaartjeman!!\nBedankt voor het spelen!', x_pos=Window.width/2, y_pos=450)
+        window.add_text(f'Gefeliciteerd {Player.players[0].name}, jij bent winnaartjeman!!\nBedankt voor het spelen!', x_pos=Window.width*0.5, y_pos=450)
         winner = True
     #Tekst toevoegen
     if Player.players:
-        frame_standing = window.add_frame(x_pos=Window.width/2,y_pos=550)
+        frame_standing = window.add_frame(x_pos=Window.width*0.5,y_pos=Window.height*0.55)
         window.add_text(f"{'Eindstand:' if winner else 'Tussenstand:'}", frame_standing, 0, 0, grid=True, columnspan=2)
         for id_, speler in enumerate(spelers, 1):
             window.add_text(f'{speler.name}', frame_standing, 0, id_, grid=True)
             window.add_text(f'{speler.geld}', frame_standing, 1, id_, grid=True)
     else:
-        window.add_text('Helaas, er zijn geen winnaars.\nBedankt voor het spelen!', x_pos=Window.width/2, y_pos=150)
+        window.add_text('Helaas, er zijn geen winnaars.\nBedankt voor het spelen!', x_pos=Window.width*0.5, y_pos=Window.height*0.15)
 
     if Player.losers:
-        frame_losers = window.add_frame(x_pos=Window.width/2, y_pos=680)
+        frame_losers = window.add_frame(x_pos=Window.width*0.5, y_pos=Window.height*0.68)
         window.add_text(f"Helaas, {'jullie zijn' if len(Player.losers) > 1 else 'je bent'} uitgeschakeld", frame_losers, 0, 0, grid=True, columnspan=2)
         for id_, speler in enumerate(Player.losers,1):
             window.add_text(f'{speler.name}', frame_losers, 0, id_, grid=True)
             window.add_text(f'{speler.geld}', frame_losers, 1, id_, grid=True)
     
     #Start en stopknoppen
-    window.add_confirm(callback, Window.width/2, 800)
+    window.add_confirm(callback, Window.width*0.5, Window.height*0.8)
 
 
 #Window
@@ -492,7 +492,7 @@ def ronde_uitslag(root, tafel, callback):
 
     #Initialiseer window
     window = Window(root,'Tussenstand')
-    frame_top =  window.add_frame(x_pos=350, y_pos=430, bg='black', bd=0)
+    frame_top =  window.add_frame(x_pos=Window.width*0.18, y_pos=Window.height*0.43, bg='black', bd=0)
     # window.add_frame(window.frame_top, 350, 430)
     # window.frame_top["bg"] = "black"
     # window.frame_top["bd"] = 0
@@ -514,10 +514,10 @@ def ronde_uitslag(root, tafel, callback):
         window.add_text(f"{speler.rondewinst}", frame_top, x_pos=2, y_pos=i+1, grid=True, font=('calibre',10,'bold'), padx=(0,1), pady=(1,0))
         window.add_text(f"{speler.geld}", frame_top, x_pos=3, y_pos=i+1, grid=True, font=('calibre',10,'bold'), pady=(1,0))
 
-    window.add_card_canvas(tafel, 'Tafelkaarten:', 1300, 450)
+    window.add_card_canvas(tafel, 'Tafelkaarten:', Window.width*0.68, Window.height*0.45)
 
     #Start en stopknoppen
-    window.add_confirm(callback, 950, 900)  
+    window.add_confirm(callback, Window.width*0.5, Window.height*0.9)  
 
 
 
@@ -526,16 +526,16 @@ def menu(tekst:str, knoptekst:str, root:Tk):
     # Create an instance of tkinter window
     window = Window(root,'Start')
     #Plaatjes toevoegen
-    frame_menu = window.add_frame(x_pos=Window.width/2, y_pos=450)
+    frame_menu = window.add_frame(x_pos=Window.width*0.5, y_pos=Window.height*0.45)
     img_bg = PhotoImage(Image.open(Card.bg_loc).resize(Card.imagesize))
     window.images.append(img_bg)
     # Create a Label Widget to display the text or Image
     window.add_image(frame_menu, img_bg, 0,0, grid=True)
     window.add_text(tekst, frame_menu, 0, 1, grid=True)
     #Start en stopknoppen
-    window.add_button(window.window, knoptekst, Window.width/2, 600, lambda: kiesmenu_aantal(root))
-    window.add_button(window.window, "Instructies", Window.width/2, 650, lambda: instructies(root))
-    window.add_button(window.window, "Sluit spel", Window.width/2, 700, exit)
+    window.add_button(window.window, knoptekst, Window.width*0.5, Window.height*0.6, lambda: kiesmenu_aantal(root))
+    window.add_button(window.window, "Instructies", Window.width*0.5, Window.height*0.65, lambda: instructies(root))
+    window.add_button(window.window, "Sluit spel", Window.width*0.5, Window.height*0.7, exit)
 
 #Window
 def instructies(root:Tk):
@@ -543,26 +543,29 @@ def instructies(root:Tk):
     #Tekst om op het scherm te plaatsen
     instructietekst = "Klik op de kaarten om deze te spelen,\ntoep als je denkt te kunnen winnen."
     #Tekst toevoegen
-    window.add_text(instructietekst, x_pos=Window.width/2, y_pos=400)
+    window.add_text(instructietekst, x_pos=Window.width*0.5, y_pos=Window.height*0.4)
     #Knop toevoegen die terug gaat naar het hoofdmenu
-    window.add_button(window.window, "Terug", x_pos=Window.width/2, y_pos=650, functie=lambda: menu("\nWil je een potje spelen?", "Start", root))
+    window.add_button(window.window, "Terug", x_pos=Window.width*0.5, y_pos=Window.height*0.65, functie=lambda: menu("\nWil je een potje spelen?", "Start", root))
 
 
 #Root
 def main():
     root = Tk()
-    root.title('Toepen')
-    root.geometry(f'{Window.width}x{Window.height}+0+0')
-    root.resizable(width=False, height=False)
+    # root.title('Poker')
+    Window.width = root.winfo_screenwidth()
+    Window.height = root.winfo_screenheight()
+    root.attributes('-fullscreen', True)
+    # root.geometry(f'{Window.width}x{Window.height}+0+0')
+    # root.resizable(width=False, height=False)
     # root.minsize(Window.width,Window.height)
     # root.maxsize(Window.width,Window.height)    
     root.configure(background=Window.bg_color)
 
-    Player.aantal=3
-    Player.players = [Player('oli1'), Player('oli2'), Player('oli3')]
-    spel_spelen(root)
+    # Player.aantal=3
+    # Player.players = [Player('oli1'), Player('oli2'), Player('oli3')]
+    # spel_spelen(root)
 
-    # menu("\nWil je een potje spelen?", "Start", root=root)
+    menu("\nWil je een potje spelen?", "Start", root=root)
     root.mainloop()
 
 

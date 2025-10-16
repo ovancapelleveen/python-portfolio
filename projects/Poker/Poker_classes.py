@@ -131,8 +131,8 @@ class Window():
     """Representatie van een speelscherm."""
     bg_color = 'pink'
     fg_color = 'black'
-    width = 1900
-    height = 1000
+    width = 0
+    height = 0
 
     def __init__(self, parent, naam=None):
         self.window = parent
@@ -142,6 +142,8 @@ class Window():
         #Root leegmaken bij volgende aanroep
         for widget in parent.winfo_children():
             widget.destroy()
+
+        self.window.bind('<Escape>', exit)
 
     def on_enter(self, button, relief=tk.SUNKEN, color=None):
         """Verander relief van een knop als de cursor erover hovered."""
@@ -187,7 +189,6 @@ class Window():
                 except Exception:
                     pass
             self.place_widget(label, x_pos, y_pos, **kwargs)
-
 
     def add_image(self, frame, image_, x_pos, y_pos, grid=True, **kwargs):
         """Afbeelding toevoegen aan het frame."""
