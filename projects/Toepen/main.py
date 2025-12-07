@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import Button, Label, Frame, Tk
 
 import os
-from PIL import Image #, ImageTk
+from PIL import Image
 from PIL.ImageTk import PhotoImage
 from random import shuffle
 from itertools import cycle
